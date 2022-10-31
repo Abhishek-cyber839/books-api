@@ -1,0 +1,46 @@
+version: "3.7"
+services:
+  blogsApi:
+    container_name: blogs-api
+    build:
+      image: blogsapi:v1
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - "post_gres_db"
+    ports:
+      - "8081:8081"
+      - "8000:8000"
+    networks:
+      - aspnetcoreapp-network
+  post_gres_db:
+    container_name: pgsql
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432"
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: "abhishek"
+      POSTGRES_PASSWORD: "strongpassword"
+      POSTGRES_DB: "dotnetdocker"
+    networks:
+      - aspnetcoreapp-network
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=admin1234
+    ports:
+      - "5050:80"
+    restart: always
+    volumes:
+      - pgadmin:/root/.pgadmin
+    networks:
+      - aspnetcoreapp-network
+networks:
+  aspnetcoreapp-network:
+    driver: bridge
+volumes:
+  db_volume:
