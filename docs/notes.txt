@@ -65,3 +65,61 @@ Postgres commands
 \c databasename - connect to database
 \q - exit of psql
 ctrl + shift + L - clear psql console
+
+# Add following lines to the dockerfile of the dotnet-core image, and also add a /health endpoint either in program.cs if using 
+minimal api or a new controller, which will check the connection with database etc. 
+On how to implement health check (https://code-maze.com/health-checks-aspnetcore/), (https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-6.0)
+RUN apt-get update 
+RUN apt-get --yes install curl
+HEALTHCHECK --interval=5s --timeout=10s --retries=3 CMD curl --silent --fail http://localhost/health || exit 1
+If we have multiple health endpoints we can use a script that makes multiple curl requests like below
+COPY files/healthcheck.sh /healthcheck.sh
+RUN chmod +x /healthcheck.sh
+HEALTHCHECK --interval=60s --timeout=10s --start-period=10s \  
+    CMD /healthcheck.sh || exit 1
+That way you can do multiple requests via curl and let the script only return positive, if all requests succeeded.
+we can use a sample script like this (https://stackoverflow.com/questions/37885025/rest-service-health-check-on-automatic-deployment)
+
+
+------
+.We can use angular route resolver to pre load the data before component gets rendered
+2.For components that are lazy loaded(means it is only loaded into memory when we need it), we add CommonModule, Router.ForChild(childroutes) inside imports property, rather than BrowserModule and Router.ForRoute as we do inside app module, we can achieve this using dynamic import
+3.We can use <ng-content></ng-content> to get the child component wrappend within the parent component, it is similar to react's this.children
+4.we can also use <ng-content selector="seleect by class, select by attribute"> to display only selected component for example - 
+
+child component - 
+<div class="section1">
+ <p>section 1</p> 
+<div>
+<div class="section2">
+ <p>section 2</p> 
+<div>
+
+Then inside parent component 
+<parent>
+ <child></child>
+</parent>
+
+parent component - 
+ <div>
+	<h5> Parent component /<h5>
+	<div *ngIf="somecondition">
+          <ng-content selector=".section1"></ng-content>
+	</div> 
+        <div *ngIf="someothercondition">
+          <ng-content selector=".section2"></ng-content>
+	</div> 
+ </div>
+
+This will display different parts of child component based on somecontion using any kind of selector, it is called content projection
+5.We can InjectionToken rather registering a class for DI
+6.We can use #whatevername to reference a component and then using @ViewChild to get the actual dom element
+For example
+ <div class="trash" #mycomponent>
+	<h5> Parent component /<h5>
+ </div>
+
+@ViewChild('#mycomponent') myreference: ElementRef;
+const div = this.myreference.nativeElement; 
+
+To get dom elements of the child comoponent as from step 4 we have to use @ViewContent
