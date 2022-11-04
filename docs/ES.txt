@@ -1,0 +1,96 @@
+1. To get document by id
+curl --location --request GET 'http://localhost:9200/_mget?pretty' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "docs":[
+        {
+        "_index":"products",
+        "_type":"mobile",
+        "_id":"vXMNQIQBvd1U_TVjR4LM"
+        }
+    ]
+}'
+
+2.To insert items in bulk from json file
+curl --location --request POST 'http://localhost:9200/products/mobile/_bulk?pretty&refresh' \
+--header 'Content-Type: application/json' \
+--data-binary '@/C:/Users/WE21509/Downloads/data.json'
+
+sample file format - 
+{"index":{}}
+{"name":"iphone-16","version":15.9,"build-date":"yesterday","ram":"16gb","cpu":"4-core","color":"black"}
+{"index":{}}
+{"name":"iphone-17","version":15.9,"build-date":"yesterday","ram":"16gb","cpu":"4-core","color":"black"}
+{"index":{}}
+
+3.To search elements by particular query
+curl --location --request GET 'http://localhost:9200/products/_search?pretty&q=iphone-12&size=2'
+
+4.To get all the documents for particular index
+curl --location --request GET 'http://localhost:9200/products/_search?pretty' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "query":{ "match_all": {}}
+}'
+
+5. Including size param
+curl --location --request GET 'http://localhost:9200/products/_search?pretty' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "query":{ "match_all": {}},
+    "size":13
+}'
+
+6.If we just wanna retrieve the _id for that document we can set _source = false
+{
+    "_source":false,
+    "query":{ "match_all": {}},
+    "size":13
+}
+
+
+7. to query for particular field 
+{
+    "_source":[field1, field2.....],
+    "query":{ 
+	"term" : {
+          "name" : "iphone-11"
+       }
+    },
+    "size":13
+}
+
+it will return all the documents where name matches exactly to iphone-11 and max-results will be 13 along with all the fields we are interested in from the result documents, please see includes and excludes for _source
+
+8. Another way to perform match is using match
+{
+    "query":{ 
+	"match" : {
+          "name" : "iphone-11"
+       }
+    },
+}
+The difference between term and match is that when we use term the corresponding match needs to match in full, whilst with match it will match iphone-11-zxczxc, iphone-11-x, iphone-11, iphone-11cxzcz, .... we can also use match_phrase, match_phrase_prefix
+
+
+9.Using OR, AND
+{
+    "query":{ 
+	"match" : {
+          "name" : {
+                "query" : "iphone-11 iphone-12",
+                "operator" : "or"
+          }
+       }
+    },
+}
+
+it will return all the documents that have words iphone-11-zxczxc, iphone-11-x, iphone-11, iphone-11cxzcz, .... and iphone-12-zxczxc, iphone-12-x, iphone-12, iphone-12cxzcz, ....
+
+
+
+
+
+
+
+
