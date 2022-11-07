@@ -151,6 +151,16 @@ For example
 const div = this.myreference.nativeElement; 
 
 To get dom elements of the child comoponent as from step 4 we have to use @ViewContent
+For component to component without parent child relationship use subject or behaviorSubject, the only difference among the two is that we can set initial values in behaviorSubject but not in subject
+
+reference videos for rxjs operators - https://www.youtube.com/watch?v=ET2UPbsgPL8
+ngOnChanges(),ngDoCheck() lifecycle hooks are similar to reacts pure component which also checks new props with the previous ones and re-renders the component only if they are changed 
+angular hooks - (https://www.youtube.com/watch?v=qdvGXSUk7Mo)
+
+# Use following operators on use case - 
+retry(), retryWhen(), scan(), delay()  - making calls to api 
+debounceTimer(), debounceUntilWhen() - when we wanna make an api call or fetch data directly after ceratin delay
+
 
 
 (https://www.baeldung.com/linux/use-command-line-arguments-in-bash-script)
