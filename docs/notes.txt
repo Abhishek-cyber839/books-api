@@ -80,6 +80,34 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=10s \
 That way you can do multiple requests via curl and let the script only return positive, if all requests succeeded.
 we can use a sample script like this (https://stackoverflow.com/questions/37885025/rest-service-health-check-on-automatic-deployment)
 
+We can utilise similar architecture for authentication/authorization using api gateway before we pass requests to the ECS cluster 
+(https://aws.amazon.com/blogs/security/building-fine-grained-authorization-using-amazon-cognito-api-gateway-and-iam/)
+(https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-the-id-token.html)
+(https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html)
+(https://github.com/awslabs/aws-support-tools/tree/master/Cognito/decode-verify-jwt)
+(https://aws.amazon.com/blogs/containers/securing-amazon-elastic-container-service-applications-using-application-load-balancer-and-amazon-cognito/)
+
+# Approach for policy based auth for backend services using api-gateway, ecs and cognito 
+1. Running Backend tasks in private subnet of vpc
+2. Running Api gateway in public subnet of same VPC
+3. Connect Api gateway using VPC link to the backend with network load balancer in place(or search if we can directly connect api gaetway to backend service in private subnet using vpc link without requiring NLB, as it is costly)
+4. Set up Cognito user pools
+5. When a user hits the the /get/pets endpoint it'll pass that request to lambda authorizer with the token from the cognito and then it'll get policy from dynamodb, returns it back to the api gateway which then caches that policy for the same user for further requests, and then pass that onto the network load balancer which'll then forward to the backend service.
+6 The above steps assume that the user already exists in cognito user pool
+
+# Approch for frontend auth using cognito, ecs, and ALB
+1.A user sends a request to the application fronted by the ALB, which has a set of rules that it evaluates for all traffic to determine what action to carry out. The rule (such as the path-based rule saying all traffic for/login) when matched triggers the authentication action on the ALB. The ALB then inspects the user’s HTTP payload for an authentication cookie.
+2.Because this is the user’s first visit, this cookie isn’t present. The ALB doesn’t see any cookie and redirects the user to the configured Amazon Cognito’s authorization endpoint.
+3.The user is presented with an authentication page from Amazon Cognito, where the user inputs their credentials. Amazon Cognito redirects the user back to the ALB and passes an authorization code to the user in the redirect URL.
+4.The load balancer takes this authorization code and makes a request to Amazon Cognito’s token endpoint.
+5.Amazon Cognito validates the authorization code and presents the ALB with an ID and access token.
+6.The ALB forwards the access token to Amazon Cognito’s user info endpoint.
+7.Amazon Cognito’s user information endpoint presents the ALB with user claims.
+8.The ALB redirects the user who is trying to access the application (step 1) to the same URL while inserting the authentication cookie in the redirect response.
+9.The user makes the request to the ALB with the cookie and the ALB validates it and forwards the request to the ALB’s target. The 10.ALB inserts information (such as user claims, access token, and the subject field) into a set of X-AMZN-OIDC-* HTTP headers to the target.
+11.The target generates a response and forwards to the ALB.
+12.The ALB sends the response to the authenticated user.
+When the user makes subsequent requests for HTTP request and response, the flow will go through steps 9–11. If the user makes a new request without the authentication cookie, it goes through steps 1–11.
 
 ------
 .We can use angular route resolver to pre load the data before component gets rendered
@@ -123,3 +151,6 @@ For example
 const div = this.myreference.nativeElement; 
 
 To get dom elements of the child comoponent as from step 4 we have to use @ViewContent
+
+
+(https://www.baeldung.com/linux/use-command-line-arguments-in-bash-script)
