@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using blogs_api.domain;
 using blogs_api.Models;
-using System.Text.Json;
-using AutoFixture;
 
 [ApiController]
 [Route("api/[controller]")]
