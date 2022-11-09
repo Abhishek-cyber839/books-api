@@ -164,3 +164,6 @@ debounceTimer(), debounceUntilWhen() - when we wanna make an api call or fetch d
 
 
 (https://www.baeldung.com/linux/use-command-line-arguments-in-bash-script)
+
+# Apache Kafka - sample project architecture
+https://aws.amazon.com/blogs/developer/building-an-apache-kafka-data-processing-java-application-using-the-aws-cdk/ 
