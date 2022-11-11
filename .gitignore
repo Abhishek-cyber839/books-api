@@ -1,3 +1,4 @@
 .vscode/
 ./blogs-api/obj
 ./blogs-api/bin
+./docs/generated.json

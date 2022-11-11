@@ -1,0 +1,130 @@
+public class TestDatabaseFixture
+{
+    private static bool _databaseInitialized;
+
+    public TestDatabaseFixture()
+    {
+        if (!_databaseInitialized)
+          {
+                using (var context = CreateContext())
+                {
+                    context.Database.EnsureDeleted();
+                    context.Database.EnsureCreated();
+                    // seed data only if there's no data in books table
+                    if(!this.DataExists())
+                    {
+                        _databaseInitialized = this.SeedData();
+                    }
+                }
+                
+          }
+    }
+
+    public BookContext CreateContext(){
+        // Environment variables set in github actions for postgres service
+        string POSTGRES_HOST = Environment.GetEnvironmentVariable("POSTGRES_HOST");
+        string POSTGRES_USER = Environment.GetEnvironmentVariable("POSTGRES_USER");
+        string POSTGRES_PASSWORD = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+        string POSTGRES_DB = Environment.GetEnvironmentVariable("POSTGRES_DB");
+        string ConnectionString = $"Host={};Username={};Password={};Database={}";
+        return new BooksContext(
+                new DbContextOptionsBuilder<BloggingContext>()
+                    .optionsBuilder.UseNpgsql(ConnectionString, options => options.UseAdminDatabase("my_admin_db"))
+    }
+
+    public bool SeedData(BookContext context){
+        try{
+            context.books.AddRange(
+                        new Book {  },
+                        new Book { }
+                );
+            context.SaveChanges();
+        } catch(Exception e){
+            return false;
+        }
+        // successfully seeded data
+        return true;
+    }
+   
+    public bool DataExists(BookContext context){
+        // check if there's data
+        return context.books.SingleOrDefault() != null;
+    }
+}
+
+public class BookContext: DbContext
+{
+    public DbSet<Book> books { get; set; }
+}
+
+public class Book
+{
+    public int blogid { get; set; }
+    public string authorname { get; set; } = "";
+    public BlogCategory blogcategory { get; set; }
+    public string? description { get; set; }
+    public string title { get; set; } =  "";
+    public long numberofviewers { get; set; }
+}
+
+
+[CollectionDefinition("Database collection")]
+public class DatabaseCollection : ICollectionFixture<TestDatabaseFixture>
+{
+    // This class has no code, and is never created. Its purpose is simply
+    // to be the place to apply [CollectionDefinition] and all the
+    // ICollectionFixture<> interfaces.
+    // It will inject the <interface> into whathever class uses [Collection("Database collection")] on top
+    // of its definition, in this case it is TestDatabaseFixture
+}
+
+[Collection("Database collection")]
+public class BooksControllerTest
+{
+    public readonly TestDatabaseFixture _fixture;
+    public readonly HttpCLient _httpClient;
+
+    public BooksControllerTest(TestDatabaseFixture fixture){
+        fixture = _fixture;
+    }
+
+    [Theory]
+    InlineData("/api/books",5)
+    InlineData("/api/books",6)
+    public async void GetBookById_WhenPassedValidId_Returns200Ok(int id)
+    {
+        using var context = _fixture.CreateContext();
+        var controller = new BooksController(context);
+        // send request
+        var response  = await _httpClient.SendAsync($"{url}/{id}")
+        Assert.Equal();
+    }
+      // ... other tests
+}
+
+[Collection("Database collection")]
+public class SomeOtherControllerTestClass
+{
+    public readonly TestDatabaseFixture _fixture;
+    public readonly HttpCLient _httpClient;
+
+    public SomeOtherControllerTestClass(TestDatabaseFixture fixture)
+    {
+        fixture = _fixture;
+    }
+}
+
+
+ reference https://stackoverflow.com/questions/36425008/mocking-httpclient-in-unit-tests
+
+var mockHttp = new MockHttpMessageHandler();
+// Setup a respond for the user api (including a wildcard in the URL)
+mockHttp.When("http://localost/api/user/*")
+        .Respond("application/json", "{'name' : 'Test McGee'}"); // Respond with JSON
+// Inject the handler or client into your application code
+var client = new HttpClient(mockHttp);
+var response = await client.GetAsync("http://localhost/api/user/1234");
+// or without async: var response = client.GetAsync("http://localhost/api/user/1234").Result;
+var json = await response.Content.ReadAsStringAsync();
+// No network connection required
+Console.Write(json); // {'name' : 'Test McGee'}

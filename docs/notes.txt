@@ -3,7 +3,8 @@ follow option 3 for AWS RDS  Aurora postgres/mysql
 
 2.JWT authentication with nginx as reverse proxy https://www.nginx.com/blog/authenticating-api-clients-jwt-nginx-plus/
 
-3.Create a frontend service in public subnet with all the ec2 instances in public network, whilst put backend dotnet api cluster/services into the private network in the same vpc and then send requests from frontend(service1) to backend(service2) using service2's public ip address or we if there's a load balancer sitting in front of it then replace it with the ip address of service2's load balancer's ip address (https://aws.amazon.com/blogs/aws/amazon-ecs-service-discovery/) 
+3.Create a frontend service in public subnet with all the ec2 instances in public network, whilst put backend dotnet api cluster/services into the private network in the same vpc and then send requests
+ from frontend(service1) to backend(service2) using service2's public ip address or we if there's a load balancer sitting in front of it then replace it with the ip address of service2's load balancer's ip address (https://aws.amazon.com/blogs/aws/amazon-ecs-service-discovery/) 
 
 4.Service discovery tutorial - https://devops4solutions.medium.com/deploy-java-microservices-using-aws-ecs-service-discovery-27a8ba71dbd4
 
@@ -112,7 +113,8 @@ When the user makes subsequent requests for HTTP request and response, the flow 
 # Use both fargate and ec2 launch type along with path based routing, we can basically move the entire architecure into private even the load balancer, and then create an api-gateway on public internet which will connect to the load balancer throught vpc link
 (https://aws.amazon.com/blogs/containers/using-aws-application-load-balancer-path-based-routing-to-combine-amazon-ecs-launch-types/)
 :- Do note that with fargate launch type we cannot access host instance's volume, i.e no persistence volume to overcome this we have to use EFS (https://aws.amazon.com/premiumsupport/knowledge-center/ecs-fargate-mount-efs-containers-tasks/) 
-:- If we wanna access efs from our local pc we can create an ec2 in public subnet and efs in public/private depending on our need, then create a directory in efs and in ec2 for a user for ex - /efs/demo-user and mount that to efs, then use whatever directory you want in your local pc to mount to that /efs/local -> /efs/demo-user and make changes or access files using sshfs which gives us access(mounts local directories to remote servers) to the whole filesystem using ssh, the end solution will be 
+:- If we wanna access efs from our local pc we can create an ec2 in public subnet and efs in public/private depending on our need, then create a directory in efs and in ec2 for a user for ex - /efs/demo-user and mount that to efs, then use whatever directory you want in your local pc to mount to that /efs/local -> /efs/demo-user and make changes or access
+ files using sshfs which gives us access(mounts local directories to remote servers) to the whole filesystem using ssh, the end solution will be 
 /efs/local -> /efs/demo-user -> efs/efs
 (https://www.digitalocean.com/community/tutorials/how-to-use-sshfs-to-mount-remote-file-systems-over-ssh)
 
@@ -160,8 +162,8 @@ When the user makes subsequent requests for HTTP request and response, the flow 
 :- To share same instance of class among different test classes use ICollectionFixture<DatabaseFixture>
 https://xunit.net/docs/shared-context
 
-:- We can use postgres container during the test step as test db of the build job which is provided by the gitbu actions for ex - 
-
+:- We can use postgres container during the testing step as test database of the build job which is provided by the github actions for ex - 
+in action.yaml file add the below content
 env:
   POSTGRES_HOST: localhost
   POSTGRES_USER: postgres
@@ -182,6 +184,9 @@ jobs :
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: <db_name>
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432  
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -189,23 +194,57 @@ jobs :
           --health-timeout 5s
           --health-retries 5
     steps:
-       - name: Build app
-         id: build
-         run: |
-            <build command>
+        - name: Install PostgreSQL client
+          run: |
+          apt-get update
+          apt-get install --yes postgresql-client
+        # queries database with postgres client
+        - name: Query database
+          run: psql -h postgres -d <db_name> -U postgres -c 'SELECT 1;'
+          env:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        - name: Setup database
+          id: database_setup
+          run: psql -h postgres -U postgres_user -c 'CREATE DATABASE "<db_name>";'
+          env:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        # only build and test if the database is successfully set up for use
+        - name: Build app
+          if: steps.database_setup.outcome == 'success'
+          id: build
+          run: |
+              <build command>
+        - name: Run tests only when build passes # use above env variable as connectionstring for entityframework test 
+          id: test
+          run: |
+              <test command>
+        # only build new image when test passes for new changes      
+        - name: Build , tag and push new image to ecr only when test passes
+          if: steps.test.outcome == 'success' 
 
-     - name: Run tests only when build passes # use above env variable as connectionstring for entityframework test 
-       id: test
-       run: |
-          <test command>
+reference to create database for postgres container - 
 
-    - name: Build , tag and push new image to ecr only when test passes
-      if: steps.test.outcome == 'success' 
+If the above database_setup step fails we can use the below to run migration script to create and seed database and then replace 
+the properties in the above action.yaml file and Xunit-EFcore.txt, and we can also remove all the seeding logic from TestDatabaseFixture()
+as database will already be seeded and verified from the below steps
+- name: Run migrations
+  run: psql -f /books-api/postgres-script/init.sql postgresql://postgres:postgres@localhost:5432/postgres
+- name: Query database to verify above script
+  run: psql -h postgres -d <db_name> -U postgres -c 'SELECT 1;'
+  env:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+reference - https://catzkorn.dev/blog/postgres-github-actions/      
+     
 
-Then inside your CustomeWebApplicationFactory we can use npgsql nuget package connecting to the test database, but we also have to create dbcontextTest class as we do normally with all the database tables
-      
+Then inside Test Project Create new folder and files and seperate content inside Xunit-EFcore.txt to seprate files, as it shows us
+how we can use postgres database to test against production like environment rather than in memory database
 
-# BUT FOR REPOSITORY PATTERNS MOCKING IS BEST PRACTICE RATHER THAN USING IN-MEMORY DATABASE, IT SHOULD ONLY BE USED IF WE'RE ACCESSING ENTITY FRAMEWORK'S CONTEXT OBJECT DIRECTLY FOR EX - _dbcontext.dbtable.getAsync() INSIDE THE REPOSITORY INSIDE THE CONTROLLER RATHER THAN CALLING A _myRepository.getAsync()
+# BUT FOR REPOSITORY PATTERNS MOCKING IS BEST PRACTICE RATHER THAN USING IN-MEMORY OR TEST DATABASE AS ABOVE, IT SHOULD ONLY BE 
+USED IF WE'RE ACCESSING ENTITY FRAMEWORK'S CONTEXT OBJECT DIRECTLY FOR EX - _dbcontext.dbtable.getAsync() INSIDE THE REPOSITORY 
+INSIDE THE CONTROLLER RATHER THAN CALLING A _myRepository.getAsync()
   
     
 
