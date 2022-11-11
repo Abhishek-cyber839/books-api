@@ -109,6 +109,106 @@ We can utilise similar architecture for authentication/authorization using api g
 12.The ALB sends the response to the authenticated user.
 When the user makes subsequent requests for HTTP request and response, the flow will go through steps 9–11. If the user makes a new request without the authentication cookie, it goes through steps 1–11.
 
+# Use both fargate and ec2 launch type along with path based routing, we can basically move the entire architecure into private even the load balancer, and then create an api-gateway on public internet which will connect to the load balancer throught vpc link
+(https://aws.amazon.com/blogs/containers/using-aws-application-load-balancer-path-based-routing-to-combine-amazon-ecs-launch-types/)
+:- Do note that with fargate launch type we cannot access host instance's volume, i.e no persistence volume to overcome this we have to use EFS (https://aws.amazon.com/premiumsupport/knowledge-center/ecs-fargate-mount-efs-containers-tasks/) 
+:- If we wanna access efs from our local pc we can create an ec2 in public subnet and efs in public/private depending on our need, then create a directory in efs and in ec2 for a user for ex - /efs/demo-user and mount that to efs, then use whatever directory you want in your local pc to mount to that /efs/local -> /efs/demo-user and make changes or access files using sshfs which gives us access(mounts local directories to remote servers) to the whole filesystem using ssh, the end solution will be 
+/efs/local -> /efs/demo-user -> efs/efs
+(https://www.digitalocean.com/community/tutorials/how-to-use-sshfs-to-mount-remote-file-systems-over-ssh)
+
+# We can use codebuild to run unit tests and report failure/success to github's api which will then compare the status of the current commit and based on that it will build the image and push it to ECR, change the task definition, make the service to deploy new containers in the ecs cluster, in the below example we can replace it with Xunit, moq tests of dotnet 
+(https://aws.amazon.com/blogs/containers/create-a-ci-cd-pipeline-for-amazon-ecs-with-github-actions-and-aws-codebuild-tests/)
+:- As dotnet 6 is not yet supported with codebuild so we can test it in github action using one 
+(https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net)
+(https://docs.github.com/en/actions/deployment/deploying-to-your-cloud-provider/deploying-to-amazon-elastic-container-service)
+(https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) - to chek for the failure tests, we can also upload artifacts to s3 bucket
+:- Make these changes in the actions.yaml file that we'll generate from the above 3 links
+ - name: Build app
+    id: build
+    run: |
+      <build command>
+
+ - name: Run tests only when build passes
+   id: test
+   run: |
+      <test command>
+
+ - name: Build , tag and push new image to ecr only when test passes
+   if: steps.test.outcome == 'success'
+
+:- As from dotnet 6 onwards program.cs file is internal means we cannot acces it outside of the project so add the below to the .csproj file in order to access this in the test project
+ Make the Program class public using a partial class declaration:
+ public partial class Program { } and configure everything inside it
+ <ItemGroup>
+  <InternalsVisibleTo Include="$test_project_name" />
+  </ItemGroup>
+  later inside the test project within the test class add the following line 
+  var webAppFactory = new WebApplicationFactory<Program>(); 
+  as web application factory will run the api itself we don't have to use dotnet run <api_directory> in order to test our web api
+
+  we can register our own in memory test database by creating out CustomWebApplicationFactory like below 
+  public class CustomWebApplicationFactory<T>
+    : WebApplicationFactory<TStartup> where T: class 
+  with older versions we use to pass startup so we can also use the above
+  services.AddDbContext<ApplicationDbContext>(options =>
+   {
+                options.UseInMemoryDatabase("InMemoryDbForTesting");
+   });
+   
+   reference - https://dotnetthoughts.net/dotnet-minimal-api-integration-testing/
+
+:- To share same instance of class among different test classes use ICollectionFixture<DatabaseFixture>
+https://xunit.net/docs/shared-context
+
+:- We can use postgres container during the test step as test db of the build job which is provided by the gitbu actions for ex - 
+
+env:
+  POSTGRES_HOST: localhost
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: <db_name>
+
+jobs :
+  build:
+    runs-on: ubuntu-latest   
+  # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: <db_name>
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+       - name: Build app
+         id: build
+         run: |
+            <build command>
+
+     - name: Run tests only when build passes # use above env variable as connectionstring for entityframework test 
+       id: test
+       run: |
+          <test command>
+
+    - name: Build , tag and push new image to ecr only when test passes
+      if: steps.test.outcome == 'success' 
+
+Then inside your CustomeWebApplicationFactory we can use npgsql nuget package connecting to the test database, but we also have to create dbcontextTest class as we do normally with all the database tables
+      
+
+# BUT FOR REPOSITORY PATTERNS MOCKING IS BEST PRACTICE RATHER THAN USING IN-MEMORY DATABASE, IT SHOULD ONLY BE USED IF WE'RE ACCESSING ENTITY FRAMEWORK'S CONTEXT OBJECT DIRECTLY FOR EX - _dbcontext.dbtable.getAsync() INSIDE THE REPOSITORY INSIDE THE CONTROLLER RATHER THAN CALLING A _myRepository.getAsync()
+  
+    
+
 ------
 .We can use angular route resolver to pre load the data before component gets rendered
 2.For components that are lazy loaded(means it is only loaded into memory when we need it), we add CommonModule, Router.ForChild(childroutes) inside imports property, rather than BrowserModule and Router.ForRoute as we do inside app module, we can achieve this using dynamic import
