@@ -242,11 +242,54 @@ reference - https://catzkorn.dev/blog/postgres-github-actions/
 Then inside Test Project Create new folder and files and seperate content inside Xunit-EFcore.txt to seprate files, as it shows us
 how we can use postgres database to test against production like environment rather than in memory database
 
-# BUT FOR REPOSITORY PATTERNS MOCKING IS BEST PRACTICE RATHER THAN USING IN-MEMORY OR TEST DATABASE AS ABOVE, IT SHOULD ONLY BE 
-USED IF WE'RE ACCESSING ENTITY FRAMEWORK'S CONTEXT OBJECT DIRECTLY FOR EX - _dbcontext.dbtable.getAsync() INSIDE THE REPOSITORY 
-INSIDE THE CONTROLLER RATHER THAN CALLING A _myRepository.getAsync()
-  
-    
+# BUT FOR REPOSITORY PATTERNS MOCKING IS BEST PRACTICE RATHER THAN USING IN-MEMORY DATABASE, IT SHOULD ONLY BE USED IF WE'RE ACCESSING ENTITY FRAMEWORK'S CONTEXT OBJECT DIRECTLY FOR EX - _dbcontext.dbtable.getAsync() INSIDE THE REPOSITORY INSIDE THE CONTROLLER RATHER THAN CALLING A _myRepository.getAsync()
+
+-------
+# Monitoring application logs from ECS containers using datadog
+ - https://docs.datadoghq.com/containers/amazon_ecs/?tab=awscli 
+ - https://docs.datadoghq.com/containers/amazon_ecs/data_collected/
+ - https://docs.datadoghq.com/infrastructure/containermap/
+ - https://docs.datadoghq.com/continuous_integration/pipelines/github/
+ - https://docs.datadoghq.com/integrations/ecs_fargate/?tab=webui
+ - https://docs.datadoghq.com/tracing/glossary/
+ - https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=linux
+ 
+:- We can use database monitoring of datadog for testing postgres container in the ci/cd pipeline 
+:- communication from vpc to datadog vpc over private link https://docs.datadoghq.com/agent/guide/private-link/?tab=useast1
+
+# ECS fargate type monitoring using datadog
+  - https://www.datadoghq.com/blog/aws-fargate-monitoring-with-datadog/
+  - https://www.datadoghq.com/blog/aws-fargate-monitoring-with-datadog/#explore-all-your-ecs-and-eks-fargate-monitoring-data ( ECS     logs into Datadog using Fluent Bit)
+  - https://www.datadoghq.com/blog/aws-fargate-monitoring-with-datadog/#the-container-map (birdeye view of containers)
+  - https://www.datadoghq.com/blog/asp-dotnet-core-monitoring/ (dotnet with datadog locally)
+  - https://www.datadoghq.com/blog/deploy-dotnet-core-aws-fargate/ (dotnet with datadog on ecs fargate launch type)
+  - https://www.datadoghq.com/blog/monitoring-ecs-with-datadog/#from-ecs-to-datadog
+
+# Installing data-dog agent
+ 1.DD_API_KEY=7dffb9eba72d4e1c514884ed2e3c7d44
+ 2.DD_SITE="us5.datadoghq.com" 
+ 3.bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+ - If the Agent is not already installed on your machine and you don't want it to start automatically after the installation, just     prepend DD_INSTALL_ONLY=true to the above script before running it.
+
+# Monitoring AWS RDS Aurora Postgres
+ - https://docs.datadoghq.com/database_monitoring/setup_postgres/aurora/?tab=docker
+ (host your rds in private subnet then follow the verification process of above link,  through an EC2 instance which you'll create
+  in public subnet of the same VPC, as we can't connect from our local i.e outside of VPC to our rds, so we have to ssh into the   public ec2 and then connect through it to the rds, or we can also you session manager/SSM for this purpose)
+ - https://www.datadoghq.com/blog/monitor-aurora-using-datadog/
+
+# Monitoring GitHub Actions workflow
+ - https://www.datadoghq.com/blog/datadog-github-actions-ci-visibility/
+
+# AWS App Mesh 
+ - https://docs.aws.amazon.com/app-mesh/latest/userguide/what-is-app-mesh.html
+ - https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+ - https://docs.aws.amazon.com/app-mesh/latest/userguide/sharing.html (for communications between ecs services in different      accounts/vpc's use shared mesh)
+ - https://aws.amazon.com/blogs/aws/amazon-ecs-service-discovery/ (service discovery working without app mesh/proxy)
+
+
+# Indeed API (https://developer.indeed.com/docs/authorization/3-legged-oauth)
+ - client_id - e4a94622ee8b701c534483106235286398d1cee0e63bd6d2c229f88ca327ccbb
+ - client_secret - 1o4vmKP6uXHIcveF7tjS7GDVaYF0OHka49J37TE8XQAFoiM4jSCSqmAWDHQrPNtW
 
 ------
 .We can use angular route resolver to pre load the data before component gets rendered
