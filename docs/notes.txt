@@ -285,6 +285,183 @@ how we can use postgres database to test against production like environment rat
  - https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
  - https://docs.aws.amazon.com/app-mesh/latest/userguide/sharing.html (for communications between ecs services in different      accounts/vpc's use shared mesh)
  - https://aws.amazon.com/blogs/aws/amazon-ecs-service-discovery/ (service discovery working without app mesh/proxy)
+
+# We can create multiple VPC's in multiple regions under same account and the connect them using vpc-peering(inter-region), whilst 
+  same applies to vpc's in the same region(intra-region), as long as their cidr blocks don't overlap, if a vpc has multiple cidr
+  blocks, and one of them overlaps with it's peer then the request for peering will fail
+  steps for vpc peering - 
+  - go to peering connections tab, create a new vpc peering connection
+  - in requester field add your vpc1, in accepter add your vpc 2, and their respective cidr blocks
+  - then go to the account which has accepter vpc, if in same account but different region change region near to the profile, then      go to the peering connections tab and you'll see new connection request, accept or reject depending on what we wanna do
+  - once accepted, change the route tables(main routing tables where igw is configured) of both the vpc's and add cidr block in     destination and target is peering connection, for example, in vpc 1 main route table add cidr block of vpc 2 in destion field     and peering connection in the target field, similar with vpc2, so the traffic will flow through peering connection
+  - communication in vpc peering happens through private ips as they are part of similar network
+  - by default a vpc can make 50 vpc connections with other vpc regardless of regions
+  - by default we can have 25 connections in pending state
+  - by deafult a pending connection can stay pending for 1 week
+  - it is transitive, means if vpc1 -- vpc2 and vpc2 -- vpc3, then that doesn't mean vpc1 -- vpc3, if we wanna connect to vpc3     resources we can ssh into resources in vpc2 and then from their into vpc3, or we have to create a new vpc peering connection
+    between vpc1 -- vpc3
+  - we can have more than one private ip of our ec2 instances, and cannot change the existing one for the ec2 that is stopped or     running, best practice is to add EIP's to only the public facing ec2's 
+
+# transit gateway VPC - 
+  - To overcome the transitive property of the vpc peeering we use transit gateway vpc in a hub and source manner where we create a     new transit vpc and attach a vpn gateway to all other vpc's(a vpn gateway is required even if we are connecting from on premise     to our vpc's via a vpn)
+  - This new transit vpc will have ec2 instances with cisco software running on them, and it is our responsibilty to manage those     instances, once setup we create a vpn connection between the vpc's and the transit vpc, now every single vpc will be able to     communicate with each other via this transit vpc without needing to manage n number of connections
+  - For example - if their are 10 vpc's even in same or different regions we'll need to create n-1 i.e 9 connections between other     vpc's to communicate with each other, where as here we only make one connection with transit vpc and from each of the vpc
+
+# transit gateway -
+  - As we know that we have to manage our own ec2 and running 3rd party softwares on them to make a vpn connection becomes hassle,     to overcome this we use transit gateway, as it is self managed and no need for an extra vpc, ec2's 
+  - we can even connect our on-prem resources through transit gateway
+  - to connect on-prem to multiple vpc's in the same region, if we have vpc's and different regions we've to create either VPG or TGW for example - 
+  if we have only one vpc in region 1 and one vpc in region 2 we can connect them through VGW as to minimize cost, but if we have 5 vpc's in region 1 and 5 vpc's in region 2, we can connect them using 2 seprate tgw's in different regions, then tgw1 <-> tgw2 communication
+
+# Centrailsed Egress VPC - 
+  - Egress is basically setting out outbound rules for our vpc, as we know that when we create a vpc we attach an igw for internet communication and ngw or nat instance(for lower bandwidth and traffic) for private resources to talk(oubound only) to internet, imagine if we have 10 vpc's we'll have to pay for 10 igw's and 10 ngw's, which will be expensive
+  - To overcome above we won't create any internet gateway's or nat gateways or nat instances or vpc endpoints but rather create a
+    another vpc, so now we will have 11 vpc's, connect those 10 vpc' to transit gateway, then change the route tables so that ll the traffic(public and private) will go to through transit gateway, now change the routing table of the TGW, to transfer all the traffic to the newly created VPC with one IGW and NGW, here it will first go to the NGW, then to the IGW, we can have multiple NGW or nat instances depending on traffic and then divide the traffic in the routing table of the TGW, such that half of the cidr block's ip's will go to NGW-one and half to the other placed in different availibility zones and both of them will forward traffic to single IGW
+  - With the above solution they will not only have vpc peering but also eliminate the cost of having n number of nat gateways, instances, vpc endpoints and internet gateways
+  - To add traffic filtering we can replace NGW or nat instance with an EC2 instance having firewall rules enables, but we'll need to manage it
+  - We can connect more than one transit gateway from different regions depending  on the use case
+
+  VP1
+     \                        _Egress VPC
+      \                      |           | 
+  VP2 -- Transit gateway --- | ngw  ->  igw -->  External internet
+       /                     |           | 
+      /                       -----------
+ VPC3/
+
+
+# Site-to-Site VPN (https://www.youtube.com/watch?v=d_KKt5Q2aTQ) -
+ - It is just a vpn connection created between on premises and aws vpc's, it uses virtual private gateways or transit gateway and
+   customer gateway(a device or software installed on on-prem with multiple secure tunnels, if one failsit will pass traffic from another one) to create a vpn connection 
+ - if we have one vpc and want to connect that to on premise we can use virtual private gateway instead of transit gateway, else with multiple vpc's its better to use transit gateway which will not only reduce cost and management but also enable vpc peering and vpn connection to on-prem resources, in this way we can access all the vpc's from on-prem and they can communicate with each other too
+ - To make on prem user experience faster we can use the AWS global accelator which is responsible for finding out the nearest edge location(router) to route the traffic to vpc's, it is called accelerated site-to-site vpn
+ - Firstly create a customer gateway in vpc sidebar, then a virtual private gateway or transit gateway, then go to s2s connections
+   in the sidebar and add details of your cutomer gateway and virtual private gateways or transit gateway
+
+# NACL vs Security groups (https://www.youtube.com/watch?v=p0XCg5VhKQA) - 
+ - Network access control lists are the set of rules which work on subnet level, whilst security groups works on an instance/resource level, means the rules set in NACL applies to all the resources within the subnet whilst the rules set in security group applies to the resource which it is attached to.
+ - one NACL can be applied to many subnets, whilst one subnet cannot have many NACL's
+ - it works according to the rule numbers, lower the number higher the precendence
+ - it uses empheral ports, the ports that are used by our operating system  and are open for only ceratin period of time just to
+   make request and get response, for example - when we make an https request, firstly the host chooses the random port between 32700-65500 and forwards that to 443 of the server, and when the server sends the request it also does the same but at that time we'are the one who listens on 443, the sample request/response will look something like
+ 
+ Request -
+  client Port - any random port(32700-65500)
+  client ip - ip belongs to client
+  server port - 443
+  server ip - ip belongs to server
+
+ Response - 
+  server port - any random port(32700-65500)
+  server ip - ip belongs to server
+  client Port - 443
+  client ip - ip belongs to client
+
+ so the NACL for client and server will be as follows - 
+  outbound -
+    allow custom port range 32700-65500
+  inbound - 
+    allow https port 443
+
+# Google books-api 
+ - https://developers.google.com/books/docs/v1/getting_started
+ - we can use the above to populate the rds database
+
+# Direct Connect (https://www.youtube.com/watch?v=-IeVqABxIVU)-
+ - to connect on-premise to aws vpc's  privately, whilst with s2s vpn it was flowing through the internet
+ - to reduce network costs, and increase bandwidth
+ - to configure this we need a direct connect location, then we apply for a connection, once we get letter of authorization from 
+   aws, we then give it to AWS APN(amazon partner networks) to install ethernet cables between on-prem router and direct connect, once    that's done we can congifure our vrtual interfaces(ip's) and can connect securely
+ - it must be used only when we have to transfer large data set privately to the cloud, as it is a direct connection between vpc's and on-prem services whilst for other solutions request firstly goes to the ISP then to the cloud network, where we can face network congestion, so basically it bypasses the ISP,
+ - when we have real time data-feed, for example playing a video on confrence, and don't wanna be part of network congestion
+ - it has two connection types dedicated and hosted, where dedicated is between on-prem router and direct connect location, whilst hosted network is through amazon direct connect partners between on-prem router and direct connect location, dedicated connect is faster, we cannot change bandwidth in either after connection request is approved
+ - to connect multiple vpc's from different regions, use direct conenct gateway, as mutiple virtual private gateways or transit gateways will then connect to direct conenct gateway, and it will connect to direct conenct location in one of the regions and your on-prem will be connected to that direct conenct location
+
+# Private Link (https://www.youtube.com/watch?v=0bHXWIM4_0o) - 
+ - to connect on-prem or vpc to vpc communication(in same or different account/region) or to SaaS hosted on aws without needing to manage IGW or vpc peering, and to connect privately
+ - need 2 things vpc endpoint and vpc endpoint service
+ - the producer creates an endpoint service using a network load balancer type and associates a private DNS name, consumer creates a vpc endpoint
+ - the elastice interface of vpc endpoint has private ip which then connects to the private ip of vpc endpoint service thorugh its DNS name which forwards traffic to network load balancer(manadatory)
+ - not suitable for more than 2 vpc peering as we'll need to create network load balancers and endpoints in each of the vpc's which will be expensive plus hard to manage
+ - first create a network load balancer in the vpc we want to act as a producer, make it internal or external depending on whether we wanna associate private address with it, add target group instances to it
+ - go to vpc service sidebar(Producer)
+    >  endpoint services 
+    > create new 
+    > choose type as NLB 
+    > associate the one we created above 
+    > click on require acceptance so that every time someone requests a new connection we have to manually select it(only trusted ones)
+    > associate a private DNS name if we have one
+    > add tags(optional) , create
+ - go to vpc service sidebar(Consumer)
+   > endpoints
+   > create new
+   > servie type 
+   > add the arn of the above service
+   > choose that one, if it is available in multiple regions choose one
+   > vpc where we wanna create this endpoint
+   > private subnet in which it will create an ENI
+   > security groups, make sure inbound/outbound rules can accept connections from the endpoint service
+   > add tags(optional) , create
+  - it'll then send request to the producer go to the endpoint services tab and accept/reject the connection
+  - to verify whether an endpoint is created or not in consumer service
+    > go to ec2 service
+    > network interfaces
+    > copy the arn of the vpc endpoint created above
+    > search for this vpc endpoint arn
+    > if you'll see an entry of type ENI created with an id of above vpc endpoint has private ip address associated with it
+  - now we can send traffic privately
+
+# ENI -
+ - elastic network interface is similar to NIC on out machines
+ - it is responsible for assigning ip address(private and public) and MAC address(12-bit)(0-5 represents manfacturer id, 6-11 represents serial number with the help of which we can trace the actual location though it can be changed with the help of online tools) like NIC
+ - whenever we attach security group to something it is actually applied to its ENI not the actual reource
+ - it gets created in the same subnet where the resource is present
+ - we cannot detach it as long as the resource lives, reagrdless of whether it is stopped or running
+ - resources like EC2, Load balancers, vpc endpoint etc..
+
+# EBS vs instace based storage(https://www.youtube.com/watch?v=gJD8M5dcs4s)
+
+-------
+# Monitoring application logs from ECS containers using datadog
+ - https://docs.datadoghq.com/containers/amazon_ecs/?tab=awscli 
+ - https://docs.datadoghq.com/containers/amazon_ecs/data_collected/
+ - https://docs.datadoghq.com/infrastructure/containermap/
+ - https://docs.datadoghq.com/continuous_integration/pipelines/github/
+ - https://docs.datadoghq.com/integrations/ecs_fargate/?tab=webui
+ - https://docs.datadoghq.com/tracing/glossary/
+ - https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=linux
+ 
+:- We can use database monitoring of datadog for testing postgres container in the ci/cd pipeline 
+:- communication from vpc to datadog vpc over private link https://docs.datadoghq.com/agent/guide/private-link/?tab=useast1
+
+# ECS fargate type monitoring using datadog
+  - https://www.datadoghq.com/blog/aws-fargate-monitoring-with-datadog/
+  - https://www.datadoghq.com/blog/aws-fargate-monitoring-with-datadog/#explore-all-your-ecs-and-eks-fargate-monitoring-data ( ECS     logs into Datadog using Fluent Bit)
+  - https://www.datadoghq.com/blog/aws-fargate-monitoring-with-datadog/#the-container-map (birdeye view of containers)
+  - https://www.datadoghq.com/blog/asp-dotnet-core-monitoring/ (dotnet with datadog locally)
+  - https://www.datadoghq.com/blog/deploy-dotnet-core-aws-fargate/ (dotnet with datadog on ecs fargate launch type)
+  - https://www.datadoghq.com/blog/monitoring-ecs-with-datadog/#from-ecs-to-datadog
+
+# Installing data-dog agent
+ 1.DD_API_KEY=7dffb9eba72d4e1c514884ed2e3c7d44
+ 2.DD_SITE="us5.datadoghq.com" 
+ 3.bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+ - If the Agent is not already installed on your machine and you don't want it to start automatically after the installation, just     prepend DD_INSTALL_ONLY=true to the above script before running it.
+
+# Monitoring AWS RDS Aurora Postgres
+ - https://docs.datadoghq.com/database_monitoring/setup_postgres/aurora/?tab=docker
+ (host your rds in private subnet then follow the verification process of above link,  through an EC2 instance which you'll create
+  in public subnet of the same VPC, as we can't connect from our local i.e outside of VPC to our rds, so we have to ssh into the   public ec2 and then connect through it to the rds, or we can also you session manager/SSM for this purpose)
+ - https://www.datadoghq.com/blog/monitor-aurora-using-datadog/
+
+# Monitoring GitHub Actions workflow
+ - https://www.datadoghq.com/blog/datadog-github-actions-ci-visibility/
+
+# AWS App Mesh 
+ - https://docs.aws.amazon.com/app-mesh/latest/userguide/what-is-app-mesh.html
+ - https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+ - https://docs.aws.amazon.com/app-mesh/latest/userguide/sharing.html (for communications between ecs services in different      accounts/vpc's use shared mesh)
+ - https://aws.amazon.com/blogs/aws/amazon-ecs-service-discovery/ (service discovery working without app mesh/proxy)
 ------
 .We can use angular route resolver to pre load the data before component gets rendered
 2.For components that are lazy loaded(means it is only loaded into memory when we need it), we add CommonModule, Router.ForChild(childroutes) inside imports property, rather than BrowserModule and Router.ForRoute as we do inside app module, we can achieve this using dynamic import
