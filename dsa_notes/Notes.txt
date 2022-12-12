@@ -1,0 +1,882 @@
+{1, 0, 0, 0}
+{1, 1, 0, 0}
+{0, 1, 0, 0}
+{0, 1, 1, 1}
+
+ratInMaze(arr, int x1, int y1, int x2, int y2){
+   if(x1 == x2 && y1 == y2)
+      return 1;
+   if(x1 < 0 || y1 < 0 || x1 > x2 || y1 > y2 || !arr[x][y])
+      return;
+   bool canReachEnd = ratInMaze(arr,x1+1,y1,x2,y2) || ratInMaze(arr,x1,y1+1,x2,y2) || ratInMaze(arr,x1-1,y1,x2,y2) || ratInMaze(arr,x1,y1-1,x2,y2)
+   return canReachEnd;
+}
+
+struct Node {
+  int value;
+  Node* left, *right;
+  Node(int data){
+   this->value = data;
+   this->left = NULL;
+   this->right = NULL; 
+ }
+}
+
+int findHeightOfTree(Node* root){
+  if(root == NULL)
+     return 0;
+   return 1 + max(findHeightOfTree(root->left),findHeightOfTree(root->right));
+}
+
+           1
+          / \
+         2   5
+        /
+       3       
+        \
+         4
+
+
+Node* deleteNodeFromBinaryTrees(node* root, int key){
+  if(root == NULL)
+     return NULL;
+  if(key < root->key)
+    root->left = deleteNodeFromBinaryTrees(root->left, key)
+  
+  if(key > root->key)
+    root->right = deleteNodeFromBinaryTrees(root->right, key)
+
+}
+
+
+1,2,3,4,5,7
+
+bool IsCBT(Node* root, int index, int count) {
+ if(root == NULL)
+    return true;
+ // this condition checks if the tree node only has right child but no left child
+ if(index >= count)
+    return false;
+ return IsCBT(root->left,2*index+1,count) && IsCBT(root->right, 2*index+2,count)
+}
+
+
+bool IsMinHeap(Node* root){
+  if(!root)
+    return true;
+  else if(!root->right)
+    return root->left->value > root->value;
+  else {
+    return root->value < root->left->value && root->value < root->right->value && IsMinHeap(root->left) && IsMinHeap(root->right)
+  }
+}
+
+// this is for max heap
+void heapify(vector<int> elements, int index, int size) {
+  int largest = index;
+  int leftIndex = 2*index+1;
+  int rightIndex = 2*index+2;
+  largest = leftIndex < size && elements[leftIndex] > elements[largest] ? leftIndex : index;
+  largest = rightIndex < size && elements[rightIndex] > elements[largest] ? rightIndex : index; 
+  // means not heapified  
+  if(largest != index) {
+    swap(elements[index], elements[largest]);
+    heapify(elements, largest, size)      
+  }
+}
+
+void buildHeap(){
+ // we only need to heapify the tree with nodes as leaf nodes are already heapified
+ int startIndex = elements.size()-1/2;
+ for(int index = startIndex; index > -1; index--){
+    heapify(elements, index, size)
+ }
+}
+
+void heapSort(vector<int>& elements){
+ // as first elment is already sorted
+ for(int endIndex = size()-1; endIndex > 0; endIndex--){
+      swap(elements[endIndex], elements[0]);
+      // heapify all the elments other than the last one
+      heapify(elements, endIndex - 1, size())
+ }
+}
+
+void sortUsingInorderTraversal(Node* root, vector& elements){
+  if(!root)
+     return;
+  sortUsingInorderTraversal(root->left);
+  elements.push_back(root->value);
+  sortUsingInorderTraversal(root->right);
+}
+
+void checkCBTUsingLevelOrderTraversal(Node *root){
+ if(!root)
+   return true;
+ // only root is present
+ if(!root->left && !root->right)
+   return true;
+ queue<Node*> q;
+ q.push(root);
+ while(!q.empty()){
+  Node* current = q.front();
+  if(current->right && !current->left)
+    return false;
+  else if(current->left && !current->right)
+    q.push(current->left)
+  else
+    q.push(current->left);
+    q.push(current->right);
+ }
+ // traversed the whole tree every node has atleast 2 or 1 left child
+ return true;
+}
+
+Q. convert BST to minheap such that Node->value < LeftNode->value < RightNode->value 
+A. store inorder traversal into a vector and than replace values of node by doing preorder traversal;
+void constructTreeUsingPreOrder(Node *root,vector<int> elements, int index){
+  if(!root)
+    return;
+  root->value = elements.at(0);
+  elements.erase(elements.begin(),0);
+  constructTreeUsingPreOrder(root->left, elements, index+1);
+  constructTreeUsingPreOrder(root->right, elements, index+1);
+}
+
+// Merge K-Sorted arrays
+void MergeKSortedArrays(vector<vector<int>> arrays, vector<int>& newArray){
+ priority_queue<int, vector<int>, greater<int>> pq;
+ for(auto subArray : arrays){
+    for(int element: subArray){
+        pq.push(element);
+    }
+  }
+ 
+  while(!pq.empty()){
+     newArray.push_back(pq.top());
+     pq.pop();
+ }
+}
+
+
+// as all the linked lists are sorted so their minimum element will be at index 0 and next minimum after that and so on
+
+ 
+Node* mergeKSortedLinkedLists(vector<Node*> sortedLinkedLists){
+  int countOfLinkedLists = sortedLinkedLists.size();
+  if(!countOfLinkedLists) return NULL;
+  auto compare = [](Node* a, Node* b) { return a->data < b->data ; }
+  priority_queue<Node*, vector<Node*>, decltype(compare)> pq(compare);
+  for(Node* node: sortedLinkedLists)
+      pq.push(node);
+  Node* head = pq.top();
+  Node* tail = head;
+  pq.pop();
+  Node* top = NULL;
+  while(!pq.empty()){
+    top = pq.top();
+    tail->next = top;
+    tail = tail->next;
+    if(top->next)
+       pq.push(top->next);
+    pq.pop();
+ }
+  return head;
+}
+
+
+a[] = {20, -5, -1}, K = 3
+void KthLargestSumSubArray(vector<int> a, k){
+   priority_queue<int> pq;
+   int sum = 0, max_so_far = 0;
+   
+  for(int index = 0; index < a.size(); index++){ 
+     sum = a[index];
+     max_so_far = 0;
+     for(int innerIndex = index + 1; innerIndex < a.size(); innerIndex++){
+          sum += a[innerIndex];
+          max_so_far = max(max_so_far, sum);
+     }
+     //(O)nlogn - to get the top, as it will heapify each and every time the element is pushed  
+     pq.push(a[index]);
+     pq.push(max_so_far);  
+   }
+  
+  int count = k - 1 // when k = 3 we need to remove 2 elements to get the 3rd largest sum;
+  while(count) {
+      pq.pop();
+  }
+  return pq.top(); 
+}
+
+
+// string is balanced if no 'b' appears before 'a' -> ababb -> aabb therefore number of deletions = 1, i.e remove b from 1 index
+or we can delete a at index 2.
+void numberOfDeletionsToMakeStringBalanced(string str){
+  int char_to_be_removed = 0;
+  if(str.length() == 0 || str.length() == 1)
+     return char_to_be_removed;
+  stack<char> st;
+  string balancedString = "";
+  for(int index = 0; index < str.length(); str++){
+       if(!st.empty() && st.top() == 'b' && str[index] == 'a')
+         st.pop();
+         char_to_be_removed++;
+       else
+          balancedString.push_back(str[index]);
+          st.push(str[index]);
+  }
+   return char_to_be_removed;
+}
+
+bool IsSafeMove(int row, int column, vector<vector<int>> maze, vector<vector<bool>> visited) {
+  return maze[row][column] == 1 && visited[row][column] == 1;
+}
+
+string getNextMove(int currentRow, int currentColumn, int nextRow, int nextColumn) {
+   if(currentRow < nextRow)
+      return "D";
+   else if(currenColumn < nextColumn)
+      return "R";
+   else if(currentRow > nextRow)
+      return "U";
+   return "L"
+}
+
+void ratInMazeUsingBackTracking(vector<vector<int>> maze, int row, int column, string& direction, vector<string>& result, vector<vector<int>>& visited, vector<int> xDirection, vector<int>, yDirection){
+  if(row < 0 || column < 0 || row == maze.length() || column == maze[0].length())
+     return;
+  if(row == maze.length()-1 && column == maze[0].length()-1){
+     result.push_back(direction)
+     return;
+  }
+  visited[row][column] = 1;
+  for(int index = 0; index < 4; index++) {
+     int nextRow = row + xDirection[index];
+     int nextColumn =  column + yDirection[index]
+     if(IsSafeMove(nextRow, nextColumn, maze, visited)){
+          direction.push_back(getNextMove(row, column, nextRow, nextColumn));
+          ratInMazeUsingBackTracking(maze, nextRow, nextColumn, direction, result, visited, xDirection, yDirection);
+          direction.pop_back();   
+    }
+  }
+  visited[row][column] = 0;
+}
+
+vector<string> getDirectionForRatToReachEndOfMaze(){
+  vector<vector<int>> maze = {
+      {1,0,0,0},
+      {1,1,0,1},
+      {1,1,0,0},
+      {0,1,1,1}
+  };
+  vector<vector<int>> visited = {
+    {0, 0,0 ,0},
+    {0, 0,0 ,0},
+    {0, 0,0 ,0},
+    {0, 0,0 ,0}
+ };
+ vector<int> xDirection = {1, 0, -1, 0}; 
+ vector<int> yDirection = {0, 1, 0, -1};
+ vector<string> result;
+ ratInMazeUsingBackTracking(maze, 0, 0, "", result, visited,xDirection, yDirection);
+ return result;
+}
+
+bool IsThereAQueenOnTheTopLeftDiagonals(int row, int column,int size, vector<vector<string>> chessBoard){
+  if(row < 0 || column < 0)
+     return false;
+  if(chessBoard[row][column] == "Q")
+     return true;
+  return IsThereAQueenOnTheTopLeftDiagonals(row - 1, column - 1, size, chessBoard);        
+}
+
+bool IsThereAQueenOnTheBottomLeftDiagonals(int row, int column,int size, vector<vector<string>> chessBoard){
+  if(row > size || column < 0)
+     return false;
+  if(chessBoard[row][column] == "Q")
+     return true;
+  return IsThereAQueenOnTheBottomLeftDiagonals(row + 1, column - 1, size, chessBoard);        
+}
+
+/** This will do search in (O)N time complexity whereas we can optimise that by using hashmap we can
+    check for that by using a hashmap, for example if we have stored value in the 2nd row we can store value
+    in presenceAtRows hashmap so that when placing queen in same row of different column we don't have to check all the columns
+    from 0 till currentColumn-1, same with top left diagonal if we fill our matrix with the formulae
+    chessBoard[row][column] = (n-1 + (column-row)), we can see that values on the top left of (3,3) i.e (2,2), (1,1), (0,0) will        have the same values, and then we can store values in the presenceAtTopLeftDiagonals hashmap, in the similar fashion we can         store values for the bottom left using  chessBoard[row][column] = (column + row) inside the presenceAtBottomLeftDiagonals     hashmap, check optimisedSearchOfChessBoard for implementation.
+**/
+bool IsSafeToPutQueen(int currentRow, int currentColumn, vector<vector<string>> chessBoard){
+
+ vector<int> xDiagnol = {-1, 1, 1, -1}
+ vector<int> yDiagonal = {-1, 1, -1, 1}
+ /** check for column **/
+ for(int row = 0; row < currentRow; row++)
+     if(chessBoard[row][currentColumn] == "Q")
+        return false;
+ /** check for row **/
+ for(int column = 0; column < currentColumn; column++)
+     if(chessBoard[currentRow][column] == "Q")
+        return false;
+ return !IsThereAQueenOnTheTopLeftDiagonals(row, column, size, chessBoard) && !IsThereAQueenOnTheBottomLeftDiagonals(row, column, size, chessBoard);
+}
+
+bool optimisedSearchOfChessBoard(map<int, bool> presenceAtRows, map<int, bool> presenceAtTopLeftDiagonals, map<int, bool> 				presenceAtBottomLeftDiagonals, int key) {
+    return (presenceAtRows.find(key) == presenceAtRows.end() ) &&
+           (presenceAtTopLeftDiagonals.find(key) == presenceAtTopLeftDiagonals.end()) &&
+           (presenceAtBottomLeftDiagonals.find(key) == presenceAtBottomLeftDiagonals.end());
+}
+
+void PlaceNQueensOnChessBoard(vector<vector<string>>& chessBoard,int currentColumn, int& totalWays,map<int, bool> presenceAtRows, 			     map<int, bool> presenceAtTopLeftDiagonals,map<int, bool> presenceAtBottomLeftDiagonals){
+    if(currentColumn > chessBoard.length() - 1)
+      return;
+    if(currentColumn == chessBoard.length()){
+       totalWays++;
+       return;
+    }
+    int size = chessBoard.size();
+    for(int row = 0; row < chessBoard.length(); row++) {
+       /** O(N) search
+        if(IsSafeToPutQueen(row, currentColumn, chessBoard)) {
+            chessBoard[row][currentColumn] = "Q";
+            PlaceNQueensOnChessBoard(chessBoard,currentColumn + 1,totalWays);
+            chessBoard[row][currentColumn] = "E";
+        }
+       **/
+
+        if(optimisedSearchOfChessBoard()) {
+            presenceAtRows.insert({ row, true });
+            presenceAtTopLeftDiagonals({size - row + (currentColumn - row) , true });
+            presenceAtBottomLeftDiagonals({ column + row, true });
+            PlaceNQueensOnChessBoard(chessBoard,currentColumn + 1,totalWays, presenceAtRows, presenceAtTopLeftDiagonals, presenceAtBottomLeftDiagonals);
+            presenceAtRows.erase(row);
+            presenceAtTopLeftDiagonals.erase(size - row + (currentColumn - row));
+            presenceAtBottomLeftDiagonals.erase(column + row);
+        }
+    }
+}
+
+int numberOfWaysToPutNQueensOnChessBoard(){
+   vector<vector<string>> chessBoard(5,vector<string>(5,"E"));
+   int totalWays = 0;
+   map<int, bool> presenceAtRows;
+   map<int, bool> presenceAtTopLeftDiagonals;
+   map<int, bool> presenceAtBottomLeftDiagonals;
+   PlaceNQueensOnChessBoard(chessBoard,0,totalWays, presenceAtRows, presenceAtTopLeftDiagonals, presenceAtBottomLeftDiagonals);
+   return totalWays;
+}
+
+
+bool IsThisBestChoice(int number, map<int, bool> rowMap,
+                 map<int, bool> columnMap,int row, int column){
+  bool IsNumberInSubGrid = false;
+  /** check in sub-grid 3x3 **/
+  return (rowMap.find(number) == rowMap.end()) && (columnMap.find(number) == columnMap.end()) && !IsNumberInSubGrid;
+   
+}
+
+bool solveSudoku(vector<vector<int>>& sudoku, int size,map<int, bool> rowMap, map<int, bool> columnMap){
+   for(int row = 0; row < size; row++){
+       for(int column = 0; column < size; column++){
+            if(sudoku[row][column] == 0){
+              for(int number = 1; number < 10; number++){
+                   if(IsThisBestChoice(number,rowMap,columnMap,currentRow,currentColumn)) {
+                      rowMap[number] = 1;
+                      columnMap[number] = 1;
+		      sudoku[row][column] = number;
+                      bool furtherSolutionPossible = solveSudoku(sudoku, size, rowMap, columnMap);
+                      if(!furtherSolutionPossible) {
+                          rowMap.erase(number);
+                      	  columnMap.erase(number);
+		      	  sudoku[row][column] = 0;
+                      }
+                      else
+                        return furtherSolutionPossible;
+		   }
+             	}		
+            }
+            return false; // we have tried every number from 1-9 and none of them returns true;
+        }
+     }
+   return true;
+}
+
+/** str = "abbzxxy -> azy O(N) "**/
+string removeAllAdjacentDuplicates(string str){
+ string output = "";
+ if(str.length() == 0)
+    return output;
+ output.push_back(str[0]);
+ for(int index = 1;index < str.length();index++){
+   if(str[index] == str[index-1])
+      output.pop_back();
+   else
+     output.push_back(str[index]);
+ }
+ return output;
+}
+
+bool IsSafeToChooseThisColour(int colour, vector<vector<int>> graph, vector<pair<int, int>>& colours, int currentVertex){
+     for(int vertex = 0; vertex < graph[0].size(); vertex++){
+         if(graph[currentVertex][vertex] == 1 && colours.find(make_pair({vertex, colour})) != colours.end())
+            return 0;
+     }
+    return 1;
+}
+
+bool mColouringProblem(vector<vector<int>> graph, vector<pair<int, int>>& colours, int m, int currentVertex){
+        /** every vertex has a colour **/
+	if(colours.length() == graph.length())
+           return true;
+        for(int vertex = 0; vertex < graph[0].size(); vertex){
+	   if(graph[currentVertex][vertex] == 1){
+		for(int colour = 0; colour < m + 1; colour++){
+                   if(IsSafeToChooseThisColour(colour)) {
+                      colours.push_back(make_pair(vertex, colour));
+                      bool solutionExists = mColouringProblem(graph, colours, currentVertex);
+                     /** can't colour other vertices try different colour for this vertice **/
+                      if(!solutionExists)
+		         colours.erase(make_pair(vertex, colour));
+                      else
+                         return true;
+		   }
+		   
+	       }
+             /** tried every single colour for that vertex and couldn't find the solution i.e couldn't colour the remaining 		vertices **/
+             return false;
+	   }
+	}
+       return true;
+}
+
+
+
+
+
+int findSquareRootUsinBinarySearch(int n){
+ int start = 0, end = n;
+ int mid = (start + mid) / 2;
+ while(start <= end){
+     if(mid * mid == n)
+        return mid;
+    else if(mid*mid > n)
+          end = mid - 1;
+    else
+        start = mid + 1;
+    mid = (start + end) / 2;    
+ }
+ return mid;
+}
+
+double getFloatingPoints(int n, int p, double temp){
+    double factor = 1;
+    for(int precision = 0; precision < p; precision++){
+        factor /= 10;
+        for(double ans = temp; ans * ans <= n; ans += factor){
+            temp = ans;
+        }
+    }
+    return temp;
+}
+
+
+void combinationalSum(vector<vector<int>>& ans, int X, vector<int> output, vector<int> elements, int currentIndex){
+  if(X == 0)){
+        ans.push_back(output);
+        return;
+  }
+  // if sum of elements is greater than X, as we are subtracting so we need to check against 0
+  if(X < 0)
+     return;
+  for(int index = currentIndex; index < elements.size(); index++){
+     output.push_back(elements[index])
+     combinationalSum(ans,X - elements[index],output, elements,int currentIndex);
+     output.pop_back();
+  }
+}
+
+/** sort the input str, then the result sets will be in ascending order**/ 
+void powerSetInLexoGraphicalOrder(vector<string>& ans, string str, string output,int currentIndex) {
+  if(ans.find(output) == ans.end()){
+    ans.push_back(output);
+    return;
+  }
+  for(int index = currentIndex; index < str.length; index++) {
+      output.push_back(str[currentIndex]);
+      powerSetInLexoGraphicalOrder(ans, str, output, currentIndex + 1);
+      output.pop_back();
+  }
+}
+
+/** A string S is called a sum-string if the rightmost substring can be written as the sum of two substrings before it and the same is recursively true for substrings before it. **/
+bool checkIfStringIsSumString(string str){
+  for(int index = str.length() - 1; index > 1; index--){
+      int charactersOntheRight = 1;
+      int charatersOnTheLeft = (index - characters) + 1;
+      while(charactersOntheRight <= charatersOnTheLeft)) {
+         checkIfSumIsFormed(, str.substr((charactersOntheRight))
+         charatersOnTheLeft -= 1;
+         charactersOntheRight += 1;
+    }
+  }
+}
+
+
+void kSubSetsIntoEqualSum(vector<vector<int>>& ans, vector<int>& output, vector<int> elements,int K,bool visited[], int currentIndex){
+     if(elements.size() < K || (accumulate(elements.begin(),elements.end(), 0) % K != 0))
+       return;
+     if(K == 1){
+	ans.push_back(elements);
+        return;
+     }
+    if(accumulate(output.begin(), output.end(), 0) == accumulate(elements.begin(),elements.end(), 0) / K){
+	ans.push_back(output);
+        return;
+    }
+    /* mark current element as taken */ 
+    visited[currentIndex] = true;
+    output.push_back(elements[currentIndex]);
+    for(int index = currentIndex + 1; index < elements.size(); index ++){
+        if(!visited[index]){
+           visited[index] = true;
+           output.push_back(elements[index]);
+           kSubSetsIntoEqualSum(ans, output,elements,K,visited,currentIndex + 1);
+           output.pop_back();
+           visited[index] = false
+       }
+    }
+    output.pop_back();
+}
+
+vector<int> shortestPathInUndirectedGrapgh(vector<pair<int, int>> edges,int size, int source, int destination){
+    bool visited[size];
+    int parent[size];
+    unordered_map<int, list<int>> adjList;
+    for(int index = 0; index < size; size++){
+       int u = edges[index].first;
+       int v = edges[index].second;
+       adjList[u].push_back(v);
+       adjList[v].push_back(u); // as it is for undirected graph
+   }
+   if(adjList.find(source) == adjList.end() || adjList.find(destination) == adjList.end())
+      return {};
+   queue<int> bfsQueue;
+   bfsQueue.push(source);
+   while(bfsQueue.empty()) {
+     int current = bfsQueue.front();
+     bfsQueue.pop();
+     if(current == source)
+        parent[current] = -1;
+     visited[current] = 1;
+     for (auto const& neighbour : aadjList[current]){
+         visited[neighbour] = 1;
+         parent = current;
+         bfsQueue.push(neighbour)
+    }
+  }
+  vector<int> path;
+  int currentNode = destination; // assuming source is 0 and destination 8, i.e 0 based indexing
+  while(currentNode != source){
+   path.push_back(currentNode);
+   currentNode = parent[currentNode];
+ }
+ path.push_back(currentNode); // push source node at last or we can push destination at first
+ reverse(path.begin(), path.end());
+ return path
+}
+
+
+bool checkIfBST(Node* root){
+  if(root == NULL)
+     return true;
+  if(root->left && root->right == NULL && root->key < root->left->key)
+      return false;
+  if(root->right && root->left == NULL && root->key > root->right->key)
+      return false;
+  if(root->right && root->left && root->left->key > root->key > root->right->key)
+     return false;
+  return checkIfBST(root->left) && checkIfBST(root->right);
+}
+
+// Shortest distance between two nodes in BST
+int distanceFromRoot(struct Node* root, int x)
+{
+    if (root->key == x)
+        return 0;
+    else if (root->key > x)
+        return 1 + distanceFromRoot(root->left, x);
+    return 1 + distanceFromRoot(root->right, x);
+}
+ 
+// Returns minimum distance between a and b.
+// This function assumes that a and b exist
+// in BST.
+int distanceBetween2(struct Node* root, int a, int b)
+{
+    if (!root)
+        return 0;
+ 
+    // Both keys lie in left
+    if (root->key > a && root->key > b)
+        return distanceBetween2(root->left, a, b);
+ 
+    // Both keys lie in right
+    if (root->key < a && root->key < b) // same path
+        return distanceBetween2(root->right, a, b);
+ 
+    // Lie in opposite directions (Root is
+    // LCA of two nodes)
+    if (root->key >= a && root->key <= b)
+        return distanceFromRoot(root, a) +
+               distanceFromRoot(root, b);
+}
+
+// Check if each internal node of a BST has exactly one child
+Input: pre[] = {20, 10, 11, 13, 12}
+Output: Yes
+In Preorder traversal, descendants (or Preorder successors) of every node appear after the node. In the above example, 20 is the first node in preorder and all descendants of 20 appear after it. All descendants of 20 are smaller than it. For 10, all descendants are greater than it. In general, we can say, if all internal nodes have only one child in a BST, then all the descendants of every node are either smaller or larger than the node. The reason is simple, since the tree is BST and every node has only one child, all descendants of a node will either be on left side or right side, means all descendants will either be smaller or greater.
+
+// Inorder Tree Traversal without recursion and without stack! using Morris Traversal
+
+// Find median of BST
+find inorder traversal of the BST
+If number of nodes are even: then median = ((n/2th node + ((n)/2th+1) node) /2 
+If number of nodes are odd: then median = (n+1)/2th node
+
+// Print BST keys in given Range low-high, Print all the keys in increasing order.
+perform inroder traversal on the BST
+while performing inorder traversal check
+if(low < root->key < high)
+
+void inorder
+     if no root
+        return
+     if(low < root->key < high)
+        cout << root->key << endl;
+     inorder(root->left)
+     inorder(root->right)
+
+// triplet whose sum is equal to given value 
+start from index = 0 and use 2 pointer approach
+Then fix two pointers, one at i + 1 and the other at n – 1. And look at the sum, 
+If the sum is smaller than the required sum, increment the first pointer.
+Else, If the sum is bigger, Decrease the end pointer to reduce the sum.
+Else, if the sum of elements at two-pointer is equal to given sum then print the triplet and break.
+
+// Find if there is a triplet in a Balanced BST that adds to zero
+store inorder traversal of the BST in vector
+we'll use same approach here except we'll check if value at index - sum(value at firstpointer + value at secondpointer)
+
+int heightOfBST(Node* root)
+   if !root
+       return 0
+   return 1 + max(heightBST(root->left), heightBST(root->right))
+
+int numberOfnodesInBST(Node* root)
+   if !root
+       return 0;
+   return 1 + numberOfnodesInBST(root->left) + numberOfnodesInBST(root->right)
+
+// Largest BST in a Binary Tree
+for every node check if it is a binary search tree
+if so count the number of nodes, and update the max value
+return the max value
+
+int largestBST(Node* root)
+  if !root
+     return 0;
+  int totalNodes = INT_MIN
+  if(checkIfBST(root))
+     totalNodes = max(totalNodes, numberOfnodesInBST(root))
+  else
+    int maxFromLeft = largestBST(root->left)
+    int maxFromRight = largestBST(root->right)
+    totalNodes = max(totalNodes, maxFromLeft, maxFromRight)
+  return totalNodes
+
+// Add all greater values to every node in a given BST
+find and store inorder traversal in a vector
+then do inorder, preorder or postorder traversal
+then find sum of index+1 till end in the inorder traversal vector and add that to the current value, since inorder always gives us sorted result, so every value from current index to the right will be greater than it
+to perform above pass in current node->key as the param, and then find its index and then return sum of every value after that
+continue doing inorder, preorder or postorder traversal
+
+or simple recursive approach
+use a sum param and recur for right subtrees then for left subtree and as we go above in the tree keep updating sum and add value into root
+
+void AddAllGreaterValue(Node* root,int& sum)
+  if !root
+     return
+  AddAllGreaterValue(root->right,sum)
+  sum += root->data
+  root->data = sum
+  AddAllGreaterValue(root->left,sum)
+
+// The tree is AVL when the differences between the heights of left and right subtrees for every node are less than or equal to 1.
+
+// Sorted Linked List/inorder traversal to Balanced BST, since the array is already sorted
+1) Get the Middle of the linked list and make it root.
+2) Recursively do same for the left half and right half.
+       a) Get the middle of the left half and make it left child of the root
+          created in step 1.
+       b) Get the middle of right half and make it the right child of the
+          root created in step 1.
+
+Node* LLToBST(int start,int end, vector<int> sorted_array)
+     if(start > end)
+       return NULL
+     int middleElementIndex = (start + end)/2
+     Node* root = new Node(sorted_array[middleElementIndex])
+     root->left = LLToBST(start,middleElementIndex-1,sorted_array)
+     root->right = LLToBST(middleElementIndex+1,end,sorted_array)
+     return root;
+
+// Two nodes of a BST are swapped, correct the BST
+first sort the above array, and then follow the same approach as LLToBST
+
+// For matrix chain multiplication
+we can generate all permutations recursively and then update the min value accordingly
+for example - if we have dimensions of 4 matrices we can multiply them in the followig way A(BCD), (AB)(CD), (ABC)D
+and then return the minimum result
+later we can also convert that to dp top down/memoization or bottom up/tabulation 
+
+// travelling salesman problem 
+we can use dp to solve this problem by firstly recursively choosing every other city and then updating the min time value, as greedy solution doesn't necessarily always gives us a best solution
+
+// pre-fill dp[] with -1 to make it as not yet solved
+int travellingSalesmanProblem(int timeFromOneCity2Another[][], int currentCity, int endCity, int totalTimeTravelled,int& dp[]){
+   if(currenCity == endCity)
+     return totalTimeTravelled
+   if(dp[currentCity] != -1)
+      return dp[currentCity]
+   int minTime = INT_MAX
+   // perform hamiltonian cycle
+   for(int nextCity = currenCity+1; current < totalCities; current++)
+       int timeIfITravelledThroughThisCity = travellingSalesmanProblem(timeFromOneCity2Another,nextCity,endCity,totalTimeTravelled + timeFromOneCity2Another[currentCity][nextCity])
+       minTime = min(minTime, timeIfITravelledThroughThisCity)
+     return dp[currentCity] = minTime;
+}
+
+Or find out all hamiltonian paths that have hamiltonian cycle and then find the one with the minimum cost 
+https://www.geeksforgeeks.org/print-all-hamiltonian-cycles-in-an-undirected-graph/?ref=rp
+Create an auxiliary array, say path[] to store the order of traversal of nodes and a boolean array visited[] to keep track of vertices included in the current path.
+Initially, add the source vertex (in this case ‘0’) to the path.
+Now, recursively add vertices to path one by one to find the cycle.
+Before adding a vertex to path, check whether the vertex being considered is adjacent to the previously added vertex or not and is not already in path. If such a vertex is found, then add it to the path and mark its value as true in the visited[] array.
+If the length of path becomes equal to N, and there is an edge from the last vertex in path to 0, then print the path array.
+
+void hamiltonianCycles(int timeFromOneCity2Another[][], int currentCity, int endCity,vector<int>& path, vector<vector<int>>& hamiltonianPaths,int totalNodes,int& costForThisPath){
+   if(path.size() == totalNodes && timeFromOneCity2Another[currentCity][endCity])
+      hamiltonianPaths.push_back(costForThisPath)
+      return;
+   for(int neighbour = 0; neighbour < totalNodes; neighbour++){
+        // next city is not included and has en edge from this city
+	if(path.find(neighbour) == path.end() && timeFromOneCity2Another[currentCity][neighbour] != 0)
+           path.push_back(neighbour)
+           costForThisPath += timeFromOneCity2Another[currentCity][neighbour]
+           hamiltonianCycles(timeFromOneCity2Another[][], neighbour, endCity,path,hamiltonianPaths,totalNodes, costForThisPath)
+           costForThisPath -= timeFromOneCity2Another[currentCity][neighbour]
+           path.pop_back()
+        else
+          continue;
+  }
+  return
+}
+
+the above will find all the hamiltonian paths with cycle, and next just do this
+int minpath = INT_MAX
+for(auto &costs: hamiltonianPaths)
+    minpath = min(minpath, costs)
+
+
+// Ford-Fulkerson Algorithm for Maximum Flow Problem
+https://www.geeksforgeeks.org/ford-fulkerson-algorithm-for-maximum-flow-problem/
+capacity - max items that can flow between node1 -> node2
+flow - current flow between node1 -> node2
+residual capacity - capacity - flow or remaining capacity
+source - starting node
+sink - end node
+practical use case is to find out max packets that can flow between 2 servers in a network given capacity between each hop/network
+
+follow steps to find max flow
+1. find path from source to sink
+2. while travelling a path keep updating the parent array, to keep track of path
+3. find the edge with minimum flow/weight
+4. add that to max flow
+5. update the vector<vector<int>> residualCapacity from 3 for the path found in 1, such that add value from 3 to residual[node][parent], and subtract value from 3 from residual[parent][node]
+
+keep repeating steps 1-5 for all the paths, we can use BFS for this purpose, or backtracking but with only one condition extra apart from checking whether or not the vertex is already included or not, residual[vertex][neighbour] > 0
+if(neighbour is not included in the path && residual[vertex][neighbour] > 0)
+   add neighbour to path
+   parent[neighbour] = vertex // use parent array only for BFS, as for backtracking we are already tracking all the paths
+
+void FordFulkerson(vector<vector<int>>& residualCapacity, int source, int sink, vector<int>& path,int& maxFlow){
+       if(source == sink)
+          int maxFlowForThisPath = findEdgeWithMinimumWeight(path, residualCapacity, sink)
+          maxFlow += maxFlowForThisPath
+          updateResidualCapacityFromPath(path, residualCapacity,maxFlowForThisPath, sink)
+          return;
+       int maxFlow = 0;
+       for(int neighbour = 0; neighbour < totalVertices; neighbour++){
+          if(path.find(neighbour) == path.end() && residual[source][neighbour] > 0)
+             path.push_back(neighbour)
+             FordFulkerson(residualCapacity, neighbour, sink, path, maxFlow)
+             path.push_back()
+       }
+       return;
+}
+
+int updateResidualCapacityFromPath(path, residualCapacity, maxFlowForThisPath,int source, int sink){
+    // we're tracking same way as we do with the parent array and updating residual capacity
+    int source = path[0]
+    path.erase(path.begin())
+    int neighbour;
+    while(source != sink)
+        neighbour = path[0]
+        residual[source][neighbour] -= maxFlowForThisPath
+        residual[neighbour][source] += maxFlowForThisPath 
+        source = neighbour
+        path.erase(path.begin())
+    
+}
+
+int findEdgeWithMinimumWeight(path, residualCapacity, int sink){
+    int MinimumWeight = INT_MAX;
+    int source = path[0]
+    path.erase(path.begin())
+    int neighbour;
+    while(source != sink)
+        neighbour = path[0]
+        MinimumWeight = min(MinimumWeight, residualCapacity[source][neighbour])
+        source = neighbour
+        path.erase(path.begin())
+    return MinimumWeight
+}
+
+int FindMaxFlowUsingFordFulkerson(vector<vector<int>>& residualCapacity, int source, int sink){
+     vector<int> path
+     int maxFlow = 0
+     FordFulkerson(residualCapacity, source, sink, path, maxFlow)
+     return maxFlow
+}
+
+
+// Floyd Warshall Algorithm | The problem is to find the shortest distances between every pair of vertices in a given edge-weighted directed Graph. 
+if (dist[i][k] + dist[k][j] < dist[i][j])
+     dist[i][j] = dist[i][k] + dist[k][j];
+
+// A balanced binary tree is one in which for every node, the difference between heights of left and right subtree is not more than 1.
+
+Height of tree, h = 1 + max(left height, right height)
+Since the difference between the heights of left and right subtree is not more than one, possible heights of left and right part can be one of the following: 
+h - height f overall tree including root node
+(h-1), (h-2) left  subtree is greater than one
+(h-2), (h-1) right subtree is greater than one
+(h-1), (h-1) both have same height
+Given a height h, count and return the maximum number of balanced binary trees possible with height h
+// recurrence relation for the above
+count(h) = count(h-1) * count(h-2) + count(h-2) * count(h-1) + count(h-1) * count(h-1)
+         = 2 * count(h-1) * count(h-2) + count(h-1) * count(h-1)
+         = count(h-1) * (2*count(h - 2) + count(h - 1))
+ base case - // One tree is possible with height 0 or 1
+   if (h == 0 || h == 1)
+        return 1;
