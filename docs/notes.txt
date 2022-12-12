@@ -462,6 +462,14 @@ how we can use postgres database to test against production like environment rat
  - https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
  - https://docs.aws.amazon.com/app-mesh/latest/userguide/sharing.html (for communications between ecs services in different      accounts/vpc's use shared mesh)
  - https://aws.amazon.com/blogs/aws/amazon-ecs-service-discovery/ (service discovery working without app mesh/proxy)
+
+# AWS App Runner
+ - we can use app runner to run containerised applications that are only served over http/https
+ - we can either provide ECR or gihub connection so that it creates an image whenever we merge new changes into the branch provided in the build configuration
+ - when it creates a container it generates a service url using which we can access our app
+ - we can also give it minimum number of containers called app instances to avoid cold start
+ - it supports concurrency, auto deployment based on whether we merge new changes or push new image to ECR
+
 ------
 .We can use angular route resolver to pre load the data before component gets rendered
 2.For components that are lazy loaded(means it is only loaded into memory when we need it), we add CommonModule, Router.ForChild(childroutes) inside imports property, rather than BrowserModule and Router.ForRoute as we do inside app module, we can achieve this using dynamic import
