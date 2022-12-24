@@ -880,3 +880,545 @@ count(h) = count(h-1) * count(h-2) + count(h-2) * count(h-1) + count(h-1) * coun
  base case - // One tree is possible with height 0 or 1
    if (h == 0 || h == 1)
         return 1;
+
+
+// Convert array into Zig-Zag fashion
+arr[0] < arr[1]  > arr[2] < arr[3] > arr[4] < . . . . arr[n-2] < arr[n-1] > arr[n]. 
+Input: N = 7 , arr[] = {4, 3, 7, 8, 6, 2, 1} 
+Output: arr[] = {3, 7, 4, 8, 2, 6, 1}
+Sort the array.
+Traverse the array from index 1 to N-1, and increase the value of index by 2.
+While traversing the array swap arr[i] with arr[i+1].
+Print the final array.
+
+// Sort an array of 0s, 1s and 2s in O(N) time complexity and O(1) space, without using in-built sorting algorithms/functions
+we can use 3 variables zeroCount, oneCount, twoCount
+in first iteration we'll count how many number of each elements we have 
+then in second iteration we update elements in place based on their counts starting with zeroCount,oneCount, twoCount
+for(int index = 0; index < zeroCount; index++)
+    arr[index] = 0
+
+for(int index = zeroCount; index < oneCount; index++)
+    arr[index] = 1
+
+
+for(int index = oneCount; index < twoCount; index++)
+    arr[index] = 2
+
+// Given an array A of n positive numbers. The task is to find the first Equilibrium Point in an array. 
+Equilibrium Point in an array is a position such that the sum of elements before it is equal to the sum of elements after it.
+Expected Time Complexity: O(n)
+Expected Auxiliary Space: O(1)
+
+initialize 2 variables sum = sum(arr.begin(), arr.end()), leftsum = 0
+iterate from 0 - N-1, and perform following operation
+sum -= arr[index], leftsum += arr[index]
+if(sum == leftsum) then return index;
+
+// Maximum of all subarrays of size k
+Expected Time Complexity: O(N)
+Expected Auxiliary Space: O(k)
+This method uses Deque to solve the above problem
+Deque is a hybrid data structure serving the purpose of both the stack and queue and insertion and deletion of elements can take place from both the ends
+-- use brute force solution for simplicity O(N*K)
+
+// Transform a BST to greater sum tree
+Traverse node by node(Inorder) 
+For each node find all the nodes greater than that of the current node, sum the values. Store all these sums. 
+Replace each node value with their corresponding sum
+
+// Smallest window in a string containing all the characters of another string
+Given two strings S and P. Find the smallest window in the string S consisting of all the characters(including duplicates) of the string P.  Return "-1" in case there is no such window present. In case there are multiple such windows of same length, return the one with the least starting index.
+Input:
+S = "timetopractice"
+P = "toc"
+Output: "toprac"
+Explanation: "toprac" is the smallest
+substring in which "toc" can be found.
+Expected Time Complexity: O(|S|)
+Expected Auxiliary Space: O(1)
+brute force solution - generate all substrings and check if it has all the characters of P, find the smallest substring, O(N*N)
+// for each substring call below 
+bool exists(string s, string p,int s1, int s2)
+  if(s2 == p.length) -- whole pattern is matched
+    return true;
+  if(s1 > s.length() && s2 < p.length()) -- checked the whole string but couldn't found pattern
+     return false;
+  if(s[s1] == p[s2])
+     return exists(s,p,s1+1,s2+1);
+  return exists(s,p,s1+1,s2);
+
+for O(N) and O(1) space complexity solution we'll use hashing  + sliding window approach (https://practice.geeksforgeeks.org/problems/smallest-window-in-a-string-containing-all-the-characters-of-another-string-1587115621/1?page=1&company[]=Amazon&company[]=Microsoft&company[]=Google&company[]=Facebook&category[]=Binary%20Search%20Tree&category[]=Prime%20Number&category[]=DFS&category[]=Backtracking&category[]=two-pointer-algorithm&category[]=BFS&category[]=sliding-window&category[]=pattern-printing&curated[]=1&sortBy=submissions)
+
+First check if the length of the string is less than the length of the given pattern, if yes then "no such window can exist ".
+Store the occurrence of characters of the given pattern in a hash_pat[].
+we will be using two pointer technique basically
+Start matching the characters of pattern with the characters of string i.e. increment count if a character matches.
+Check if (count == length of pattern ) this means a window is found.
+If such a window found, try to minimize it by removing extra characters from the beginning of the current window.
+delete one character from first and again find this deleted key at right, once found apply step 5 .
+Update min_length.
+Print the minimum length window.
+
+string findSubString(string str, string pat)
+{
+    int len1 = str.length();
+    int len2 = pat.length();
+    if (len1 < len2) {
+        cout << "No such window exists";
+        return "";
+    }
+
+    int hash_pat[256] = { 0 }; // 256-including special characters
+    int hash_str[256] = { 0 }; // 256-including special characters
+
+    // Store occurrence ofs characters of pattern
+    for (int i = 0; i < len2; i++)
+        hash_pat[pat[i]]++;
+
+    int start = 0, start_index = -1, min_len = INT_MAX;
+    int count = 0; // Count of characters
+    
+    // Start traversing the string
+    for (int j = 0; j < len1; j++) {
+      
+        // Count occurrence of characters 
+        // of string
+        hash_str[str[j]]++;
+
+        // If string's char matches with 
+        // pattern's char
+        // then increment count
+        if (hash_str[str[j]] <= hash_pat[str[j]]) // for ex - in patt we've 2 occurences of char 't' and we've matched all the 't' in str, then we've matched one character successfully
+            count++;
+
+        // if all the characters are matched
+        if (count == len2) {
+          
+            // Try to minimize the window 
+            while (hash_str[str[start]] > hash_pat[str[start]] || hash_pat[str[start]] == 0) {
+                if (hash_str[str[start]] > hash_pat[str[start]])
+                    hash_str[str[start]]--;
+                start++;
+            }
+
+            // update window size
+            int len_window = j - start + 1;
+            if (min_len > len_window) {
+                min_len = len_window;
+                start_index = start;
+            }
+        }
+    }
+
+    return start_index == -1 ? "No such window exists" : str.substr(start_index, min_len);
+}
+
+
+// for 2, 3 sum problems we utilize same terminology of hashing, 
+find the pair of elements of sum is equal to 16
+then for every element in an array initialize hash_map[num[index]] = 1 
+then iterate over again and subtract current index value from sum and check if hash_map[num[index]] == 1 
+O(N) solution
+for 3 sum store sum of pairs in hash_map[sum(i,j)] = 1
+then iterate over again and subtract current index value from sum and check if hash_map[sum(i,j)] == 1 
+O(N^2) solution
+
+// Generate IP Addresses
+function genIp() which returns a vector containing all possible combinations of valid IPv4 IP addresses and takes only a string S as its only argument.
+Note: Order doesn't matter. A valid IP address must be in the form of A.B.C.D, where A, B, C, and D are numbers from 0-255. The numbers cannot be 0 prefixed unless they are 0.
+
+we can use backtracking for the above, but for O(N*3) solution,
+use three variables firstDot, SecondDot, ThirdDot - which represents the dots in an ipv4 address
+then get 4 substrings from (0,firstDot), (firstDot, SecondDot), (SecondDot,thirdDot), (thirdDot, n)
+and for each of the substrings check if the the number is between 0-255 inclusive
+if so concat all of them and push them into the answer
+for(int firstDot = 1; firstDot < n; firstDot++)
+   for(int secondDot = firstDot+1; secondDot < n; secondDot++)
+       for(int thirdDot = secondDot+1; thirdDot < n; thirdDot++)
+            checkifnumberbetween0and255((0,firstDot), (firstDot, SecondDot), (SecondDot,thirdDot), (thirdDot, n))
+                 res.push_back(concat((0,firstDot), (firstDot, SecondDot), (SecondDot,thirdDot), (thirdDot, n))))
+
+
+// Word Boggle
+Given a dictionary of distinct words and an M x N board where every cell has one character. Find all possible words from the dictionary that can be formed by a sequence of adjacent characters on the board. We can move to any of 8 adjacent characters
+
+Note: While forming a word we can move to any of the 8 adjacent cells. A cell can be used only once in one word.
+bool dfs(vector<vector<char> >& board, string &s, int i, int j, int n, int m, int idx){
+       
+       if(i<0 || i>=n||j<0||j>=m){
+           return false;
+       }
+       
+       if(s[idx]!= board[i][j]){
+           return false;
+       }
+       if(idx == s.size()-1){
+           return true;
+       }
+       
+       char temp = board[i][j]; // we can use visited array to keep track of cells visited and later unvisit them rather than replacing current character
+       board[i][j]='*';
+       
+       bool a = dfs(board,s,i,j+1,n,m,idx+1);
+       bool b= dfs(board,s,i,j-1,n,m,idx+1);
+       bool c = dfs(board,s,i+1,j,n,m,idx+1);
+       bool d = dfs(board,s,i-1,j,n,m,idx+1);
+       bool e = dfs(board,s,i+1,j+1,n,m,idx+1);
+       bool f = dfs(board,s,i-1,j+1,n,m,idx+1);
+       bool g = dfs(board,s,i+1,j-1,n,m,idx+1);
+       bool h = dfs(board,s,i-1,j-1,n,m,idx+1);
+       
+       board[i][j]=temp;
+       return a||b||c||e||f||g||h||d;
+
+https://www.geeksforgeeks.org/boggle-using-trie/
+
+// trie Node
+struct TrieNode {
+    TrieNode* Child[SIZE]; // SIZE - 26
+    // isLeaf is true if the node represents end of a word
+    bool leaf;
+};
+  
+// Returns new trie node (initialized to NULLs)
+TrieNode* getNode()
+{
+    TrieNode* newNode = new TrieNode;
+    newNode->leaf = false;
+    for (int i = 0; i < SIZE; i++)
+        newNode->Child[i] = NULL;
+    return newNode;
+}
+  
+// If not present, inserts a key into the trie
+// If the key is a prefix of trie node, just
+// marks leaf node
+void insert(TrieNode* root, char* Key)
+{
+    int n = strlen(Key);
+    TrieNode* pChild = root;
+  
+    for (int i = 0; i < n; i++) {
+        int index = char_int(Key[i]);
+  
+        if (pChild->Child[index] == NULL)
+            pChild->Child[index] = getNode();
+  
+        pChild = pChild->Child[index];
+    }
+  
+    // make last node as leaf node
+    pChild->leaf = true;
+}
+
+// Detect Loop in linked list (for distinct elements)
+use hashmap and store counts of element if while traversing the linked list count becomes greater than 1 or that element already
+exists in hashmap means there's a loop
+
+// Array to BST
+first sort the array
+Node* A2BST(int start, int end, int arr[]){
+  if(start > end)
+     return null;
+  int mid = start + end / 2
+  Node* root = arr[mid]
+  root->left = A2BST(start, mid-1, arr)
+  root->right = A2BST(mid+1, end, arr)
+  return root;
+}
+
+// https://www.geeksforgeeks.org/median-of-stream-of-integers-running-integers/
+// https://www.geeksforgeeks.org/minimum-length-unsorted-subarray-sorting-which-makes-the-complete-array-sorted/
+// https://www.geeksforgeeks.org/median-of-stream-of-running-integers-using-stl/
+// https://www.geeksforgeeks.org/k-largestor-smallest-elements-in-an-array/ - insert all the elements into min_heap if they're not sorted then keep on removing until kth element, if already sorted the no need to use min_heap
+       
+// when we pass a param by reference we change its value throughout all recursive call, but when we don't wanna change its value for ex - for choose unchoose we can simply pass in by value
+
+Let's say we solving a permutation/combination problem where we have to generate all the permutations the way we do it is by choosing current character and unchoosing that character if we pass a value by reference we'll do it like this
+
+void fn(string str, string& comb)
+ comb.push_back(str[i])
+ fn(str, comb)
+ comb.pop_back()
+
+but if we remove reference 
+void fn(string str, string comb)
+ fn(str, comb + str[i])
+then in the next recursive call it'll remove it itself, we can do same thing with the int values where we have to add then subtract 
+values based on the scenarios 
+
+// Maximum width of a Binary Tree
+we can solve this using level order traversal using a queue and each time we push new elements to the queue we update the max_width value
+while(!queue.empty())
+  if(queue.size() > max_width)
+    max_width = queue.size()
+  // push elements of next level
+  for(int el = 0; el < queue.size(); el++)
+     current_element = queue.front()
+     queue.pop()
+     if(curre_element->left)
+       queue.push(current_element->left)
+     if(curre_element->right)
+       queue.push(current_element->right)
+
+// Find the first non-repeating character from a stream of characters
+Given a stream of characters, find the first non-repeating character from the stream. You need to tell the first non-repeating character in O(1) time at any moment.
+https://www.geeksforgeeks.org/find-first-non-repeating-character-stream-characters/
+solution discussed in above approach uses DLL, whilst we can utilize same solution and instead of DLL can use a vector
+
+1.Create vector<int> no_repeat
+Following are steps to process a new character ‘x’ in a stream - 
+2.If x is present in the vector, remove it
+3. if first time add it to the vector
+
+// Number of subarrays having product less than K
+for O(N) solution use sliding window technique, i.e shift leftIndex to the right until product becomes less than K, and increment the count
+for(int leftIndex = 0;int rightIndex = 0; rightIndex < n;rightIndex++)
+    product *= arr[rightIndex] // product of array until index rightIndex
+    while(lefIndex < rightIndex && product >= k)
+          product /= arr[leftIndex] // keep reducing the product by moving lefIndex
+    if(product < k)
+      total_subarrays++
+
+
+// To handle overflow when multiplying 2 relatively large numbers 
+if (a > max_int64 / b) then "overflow" else "ok".
+if (b > 0 && a > 18446744073709551615 / b) {
+     // overflow handling
+}; else {
+    c = a * b;
+}
+
+// when shifting number to the right >> it becomes number*2, and when shifted towards left it becomes number / 2
+// The XOR(^) operation (or exclusive or) takes two bits and returns 1 if exactly one of the bits is 1. Otherwise, it returns 0.
+
+
+// Find the closest pair from two sorted arrays in O(n) time
+1) Initialize a variable diff as infinite (Diff is used to store the 
+   difference between pair and x).  We need to find the minimum diff.
+2) Initialize two index variables l and r in the given sorted array.
+       (a) Initialize first to the leftmost index in ar1:  l = 0
+       (b) Initialize second  the rightmost index in ar2:  r = n-1
+3) Loop while  l< length.ar1 and r>=0
+       (a) If  abs(ar1[l] + ar2[r] - sum) < diff  then 
+           update diff and result 
+       (b) If (ar1[l] + ar2[r] <  sum )  then l++
+       (c) Else r--    
+4) Print the result. 
+
+// Check if a given graph is tree or not
+An undirected graph is a tree if it has the following properties. 
+There is no cycle. - using dfs O(V + E) For performing the DFS traversal
+The graph is connected. - using dfs O(V + E) For performing the DFS traversal + O(V) For storing the visited array
+
+
+// the difference between MAC address and IP address
+The physical address -- which is also called a media access control, or MAC, address -- identifies a device to other devices on the same local network. The internet address -- or IP address -- identifies the device globally. A network packet needs both addresses to get to its destination.
+
+// Maximum length of a substring required to be flipped repeatedly to make all characters of binary string equal to 0
+
+// Count Possible Decodings of a given Digit Sequence
+1) If the last digit is non-zero, recur for the remaining (n-1) digits and add the result to the total count. 
+2) If the last two digits form a valid character (or smaller than 27), recur for remaining (n-2) digits and add the result to the total count.
+
+Memoization
+int count_d(int digits[], int n,int dp[])
+    if (n == 0 || n == 1)
+        return 1;
+    if (digits[0] == '0') // no char has int value of 0
+        return 0;
+    if(dp[n] != -1)
+       return dp[n]
+    int count = 0;
+    // If the last digit is not 0, then last digit must add to the number of words
+    if (digits[n - 1] > '0')
+        count = countDecoding(digits, n - 1, dp);
+ 
+    // If the last two digits form a number smaller than or equal to 26, then consider last two digits and recur
+    if (digits[n - 2] == '1' || (digits[n - 2] == '2' && digits[n - 1] < '7'))
+        count += countDecoding(digits, n - 2, dp);
+    return dp[n] = count
+
+Tabulation
+int count_d(int digits[], int n = sizeof(digits))
+  int dp[n] // as we wanna return result at n
+  dp[0] = dp[1] = 1;
+  if (digits[0] == '0') 
+      return 0;
+  // as we've already processed n = 0 and n = 1
+  for(int index = 2; index < n+1; index++ )
+      if (digits[index - 1] > '0')
+          dp[index] = dp[index- 1];
+      if (digits[index - 2] == '1' || (digits[index - 2] == '2' && digits[index - 1] < '7'))
+          dp[index] += dp[n - 2];
+  return dp[n];
+
+// Delete Edge to minimize subtree sum difference
+
+// Minimum steps to reach target by a Knight | Set 1
+we can solve this problem using bactracking and getting the minimum from all the directions
+This problem can be seen as the shortest path in an unweighted graph. Therefore we use BFS to solve this problem. 
+We try all 8 possible positions where a Knight can reach from its position. If the reachable position is not already visited and is inside the board, we push this state into the queue with a distance 1 more than its parent state. Finally, we return the distance of the target position, when it gets pop out from the queue
+
+// Next Greater Element (NGE) for every element in given Array for sorted and unsorted
+this can be solved using std::upper_bound for every element or using stack if don't wanna use in-built
+std::lower_bound - returns iterator to first element in the given range which is EQUAL_TO or Greater than val.
+std::upper_bound - returns iterator to first element in the given range which is Greater than val.
+
+add 0th element into the stack
+for index = 1 to n-1
+    while !stack.empty() and stack.top() < a[index]
+      cout << stack.top() << a[index]
+      stack.pop()
+    stack.push(a[index])
+In the end we'll have elements that don't have any greater element on the right so 
+while !stack.empty()
+    cout << stack.top() << -1
+    stack.pop()
+
+// Find the missing and repeating number
+we can do this for element from 1 to n and using std::count() > 1 and std::find() != vector.end()
+
+// Rearrange an array in maximum minimum form using Two Pointer Technique
+Input: arr[] = {1, 2, 3, 4, 5, 6, 7} 
+Output: arr[] = {7, 1, 6, 2, 5, 3, 4}
+Input: arr[] = {1, 2, 3, 4, 5, 6} 
+Output: arr[] = {6, 1, 5, 2, 4, 3}
+ 
+use two variables leftIndex = 0 and rightIndex = n-1
+while(leftIndex < rightIndex)
+    new_vector.push_back(old_vector[rightIndex])
+    new_vector.push_back(old_vector[leftIndex])
+    leftIndex++
+    rightIndex--
+new_vector.push_back(old_vector[rightIndex or leftIndex as they ar same])
+
+// Find a pair of elements swapping which makes sum of two arrays same
+find sum or array_one and array_two
+calculate the difference or their sum if(array_one > array_two) diff = array_one - array_two else opposite
+divide this diff / 2 as we wanna make both sums equal
+sort both the arrays and use index1 and index2
+calculate the difference arr[index1]-arr[index] as arr_diff
+if(arr_diff < diff)
+   index1++
+else
+  index2++
+but if we found that arr_diff == diff, we need to swap index1 and index2 hence return arr[index1] and arr[index2]
+if no such index1 and index2 is found return -1
+
+// Rabin-Karp Algorithm for Pattern Searching, Given a text txt[0. . .n-1] and a pattern pat[0. . .m-1], write a function search(char pat[], char txt[]) that prints all occurrences of pat[] in txt[]. You may assume that n > m.
+Input:  txt[] = “THIS IS A TEST TEXT”, pat[] = “TEST”
+Output: Pattern found at index 10
+
+Input:  txt[] =  “AABAACAADAABAABA”, pat[] =  “AABA”
+Output: Pattern found at index 0
+              Pattern found at index 9
+              Pattern found at index 12
+
+it uses a custom hash function to generate hashcode for the pattern and substrings int string of lenght(pattern) and if the hascode matches it does a comparison by comparing each element of substring with pattern in O(m) time, the whole idea behind this algorithm is to reduce number of comparisons, if we don't use this algorithm we'll have to compare each substring with the pattern O(n-m+1), but here we'll only do it when the hashcode of the substring matches with that of pattern, also matching hashcode doesn't gaurantee the match, as different substrings can have same hashcode for ex pattern_h = 123(aaa), substr_1 = 123(aaa) substr_2 = 123(abc), here substr_1 will match but not the substr_2, it all depends on our hash function to generate unique hashcodes to avoid as many collisions as we could
+
+vector<int> matched_indexes
+pattern_h = compute_hash(pattern)
+substr_h = compute_hash(str.substr(0,length(pattern)))
+if(pattern_h == substr_h)
+   compareEachChar(substr, patttern)
+   matched_indexes.push_back(0)
+for(int index = 1; index < n-length(pattern); index++)
+    /** RABIN KARP HASH FUNCTION **/
+    substr_h -= total_characters*10^2 // here total_Character can varry from 26 - 256 depending on whether string and pattern contains special characters
+    substr *= 10
+    substr_h += str.charAt(index + length(pattern))
+    /** RABIN KARP HASH FUNCTION **/
+    if(pattern_h == substr_h)
+       compareEachChar(substr, patttern)
+       matched_indexes.push_back(0)
+return matched_indexes
+
+(https://stackoverflow.com/questions/17016175/c-unordered-map-using-a-custom-class-type-as-the-key)
+
+// KMP - To find all occurences of pattern in string, Longest prefix which is also suffix
+we can find Longest prefix which is also suffix in O(n^2)
+for(int length = 0; length < n; length++)
+ matched_ = true;
+ prefix_ = str.substr(0, length)
+ suffix_ = str.substr(str.length() - length - 1, length)
+ for(int index = 0; index < length; index++)
+     if(prefix_[index] != suffix_[index])
+        matched_ = false;
+        break;
+  if(matched_)
+     max_lenght = max(max_lenght, length)
+
+But with KMP we can find Longest prefix which is also suffix in O(n)
+use kmp_[N]
+kmp_[0] = 0
+start from index = 1
+compare current index with the previous one
+if there's match kmp_[currentIndex_] = kmp_[currentIndex_ - 1] + 1
+if there's not a match get max value from 0 to kmp_[currentIndex_ - 1] index and let's say we call it as max_matched_characters_before_unmatch then compare str_[max_matched_characters_before_unmatch] and str_[currentIndex_]
+return kmp_[n]
+
+KMP algorithm is O(n) in the worst case. - not accurate but rough idea of how it works
+int KMP(string str)
+ int N = str.length()
+ int kmp[N] = {0}
+ for(int index = 1; index < N; index++)
+     if(str[index] == str[index-1])
+        kmp[index] = kmp[index-1] + 1
+     else
+       max_char_match_before_unmatch = findMaxValueFromIndexToIndex(0, kmp[index-1])
+       if(str[index] == str[max_char_match_before_unmatch])
+          kmp[index] = max_char_match_before_unmatch + 1
+  return kmp[N]
+
+// Boundary Traversal of binary tree
+
+void printLeaves(Node* root)
+{
+    if (root == nullptr)
+        return;
+    printLeaves(root->left);
+    if (!(root->left) && !(root->right))
+        cout << root->data << " ";
+    printLeaves(root->right);
+}
+
+void printBoundaryLeft(Node* root)
+{
+    if (root == nullptr)
+        return;
+ 
+    if (root->left) {
+        cout << root->data << " ";
+        printBoundaryLeft(root->left);
+    }
+   // as the second last node could not have left child but rather right
+    if (root->right) {
+        cout << root->data << " ";
+        printBoundaryLeft(root->right);
+    }
+}
+
+void printBoundaryRight(Node* root)
+{
+    if (root == nullptr)
+        return;
+    if (root->right) {
+        printBoundaryRight(root->right);
+        cout << root->data << " ";
+    }
+    // as the second last node could not have right child but rather left
+          /\
+         /  \
+        /   /
+   if (root->left) {
+        printBoundaryRight(root->left);
+        cout << root->data << " ";
+    }
+}
+
+ // Print all leaf nodes
+    printLeaves(root->left); - left subtree
+    printLeaves(root->right); - right subtree
+

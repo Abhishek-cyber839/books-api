@@ -402,3 +402,62 @@ where id not in (
   select max(id) from table
   group by name -- or any other column that has duplicates
 )
+
+// You could use GROUP_CONCAT aggregated function to get all grouped <columns> into a single column, grouped by <some_column> and ordered by <some_column>
+for ex - 
+-----------------------------------------------------------
+|  ID | GROUPED_YEAR                                      |
+-----------------------------------------------------------
+| p01 | 2006,2003,2008,2001,2007,2009,2002,2004,2005,2000 |
+| p02 | 2001,2004,2002,2003,2000,2006,2007                |
+-----------------------------------------------------------
+
+And then you could use FIND_IN_SET, that returns the position of the first argument inside the second one, eg.
+
+SELECT FIND_IN_SET('2006', '2006,2003,2008,2001,2007,2009,2002,2004,2005,2000');
+1
+
+SELECT FIND_IN_SET('2009', '2006,2003,2008,2001,2007,2009,2002,2004,2005,2000');
+6
+
+(https://dev.mysql.com/doc/refman/8.0/en/window-function-descriptions.html)
+Name	               		Description
+CUME_DIST()		Cumulative distribution value
+DENSE_RANK()		Rank of current row within its partition, without gaps
+FIRST_VALUE()		Value of argument from first row of window frame
+LAG()			Value of argument from row lagging current row within partition
+LAST_VALUE()		Value of argument from last row of window frame
+LEAD()			Value of argument from row leading current row within partition
+NTH_VALUE()		Value of argument from N-th row of window frame
+NTILE()			Bucket number of current row within its partition.
+PERCENT_RANK()		Percentage rank value
+RANK()			Rank of current row within its partition, with gaps
+ROW_NUMBER()		Number of current row within its partition
+
+// To get max value from a group 
+There is a table messages that contains data as shown below:
+Id   Name   Other_Columns
+-------------------------
+1    A       A_data_1
+2    A       A_data_2
+3    A       A_data_3
+4    B       B_data_1
+5    B       B_data_2
+6    C       C_data_1
+If I run a query select * from messages group by name, I will get the result as:
+1    A       A_data_1
+4    B       B_data_1
+6    C       C_data_1
+What query will return the following result?
+3    A       A_data_3
+5    B       B_data_2
+6    C       C_data_1
+SELECT <col>, <col>, <col>, <col>,... MAX(<column>) AS request_id
+FROM testresults
+GROUP BY test_id DESC;
+
+or we can use den_rank() as gives rank in a group not in the table rank()
+select * , desn_rank() over (partition by name order by id desc) as dr
+from table 
+where dr = 1 -- one will always have max id
+
