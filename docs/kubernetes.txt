@@ -162,3 +162,12 @@ to check whether or not the pods are healthy
 # Edge router: A router that enforces the firewall policy for your cluster. This could be a gateway managed by a cloud provider or a physical piece of hardware.
 
 # Configuring Redis using a ConfigMap (https://kubernetes.io/docs/tutorials/configuration/configure-redis-using-configmap/)
+
+# Follow articles on https://www.eksworkshop.com/ (https://www.youtube.com/watchv=emjxGvGhWm0&list=PLehXSATXjcQF3NZgGeaNOgo2MRzi0arKY&index=8)
+  * app mesh with eks (https://www.eksworkshop.com/advanced/330_servicemesh_using_appmesh/)
+  * helm chart with eks
+  * autoscaling pods and cluster in eks using HPA(horizontal pods autoscaler) and CA(cluster autoscaler not for fargate launch type as it does it automatically), load test using siege
+  * deploying on eks 
+  * ci/cd with eks and codebuild
+  * having backend pods/service in private and frontend in public subnets
+  * using ERSA to attach IAM roles to specific pods rather than to the whole EC2 intance for intance if there are 2 different pods are running on an EC2 instance and we attach an IAM role to the EC2 instance in the cluster that talks to the SNS or SQS or some other service in AWS then both of them will have access whilst we only want one kind of pod to have access, to have better security we can limit access to only one kind of service or pods rather than the whole EC2 instance 
