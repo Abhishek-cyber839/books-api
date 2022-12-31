@@ -1422,3 +1422,87 @@ void printBoundaryRight(Node* root)
     printLeaves(root->left); - left subtree
     printLeaves(root->right); - right subtree
 
+# Merge k-sorted lists
+  ListNode* mergeKLists(vector<ListNode*>& lists) {
+        priority_queue<int , vector<int>> pq;
+        for(auto &list: lists){
+            for(auto &n: list){
+                pq.push(n);
+            }
+        }
+        Node* head, *temp = new Node(pq.top());
+        pq.pop();
+        temp = temp->next;
+        while(!pq.empty()){
+          temp = new Node(pq.top());
+          pq.pop();
+          temp = temp->next;   
+        }
+        return head;
+    }
+
+# Reverse Nodes in k-Group (https://leetcode.com/problems/reverse-nodes-in-k-group/) 
+Input: head = [1,2,3,4,5], k = 2
+Output: [2,1,4,3,5]
+1. startNode = head 
+2. get kth node, endNode = kthNode, if kthNode is not NULL
+3. reverse linked List until endNode, using below ReverseLinkList(startNode* start, EndNode* end), and check while(current != end)
+4. update startNode = endNode->next, follow from step 2 
+
+
+# Reverse Linked list
+  void ReverseLinkList(Node* head){
+        Node* current = head, * prev = NULL, *next = NULL;
+        while(current != null){
+            next = current->next;
+            current->next = prev;
+            prev = current;
+            current = next;
+        }
+        head = prev;
+    }
+
+# Creating a new LL
+ Node* head
+ void push(int data)
+    {
+        Node* temp = new Node(data);
+        temp->next = head;
+        head = temp;
+    }
+
+# First Missing Positive
+  Given an unsorted integer array nums, return the smallest missing positive integer.You must implement an algorithm that runs in O(n) time and uses constant extra space.
+ - push all the elements of array in hashset or hashmap, and get max value at the same tim
+ - iterate from 1 through max value and check if hashmap or hashset contains that value O(1) lookup
+
+# Largest Rectangle in Histogram
+ - leftSmallest = 0, rightSmallest = 0, max_rec
+ - iterate from 0 to n-1
+ - get the index of left smallest than current and right smallest than current
+ - check if((rightSmallest - leftSmallest - 1) != arr[current]), as we don't want max of square but for rectangle
+      * max_rec = max(max_rec, (rightSmallest - leftSmallest - 1) * arr[current])
+
+# Binary Tree Maximum Path Sum
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ void MaxPathSum(TreeNode* root,int& maxsum){
+    if(root == null)
+       return 0;
+    int leftSum = MaxPathSum(root->left, maxsum)
+    int rightSum = MaxPathSum(root->right, maxsum)
+    // get max of 
+     - root->value
+     - root->val + leftSum + rightSum
+     - root->val + max(leftSum, rightSum)
+    int maxSumSoFar = max(max(root->value, root->val+leftSum+rightSum), root->val+max(leftSum, rightSum))
+    maxsum = max(maxsum, maxSumSoFar)
+    return maxSoFar;
+ }
+

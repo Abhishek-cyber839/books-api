@@ -1,0 +1,173 @@
+- Minikube implements a local Kubernetes cluster on macOS, Linux, and Windows
+- Namespaces are “hidden” from each other, but they are not fully isolated by default. A service in one Namespace can talk to a service in another Namespace. This can often be very useful, for example to have your team’s service in your Namespace communicate with another team’s service in another Namespace.
+When your app wants to access a Kubernetes sService, you can use the built-in DNS service discovery and just point your app at the Service’s name. However, you can create a service with the same name in multiple Namespaces! Thankfully, it’s easy to get around this by using the expanded form of the DNS address.
+
+Services in Kubernetes expose their endpoint using a common DNS pattern. It looks like this:
+
+<Service Aame>.<Namespace Name>.svc.cluster.local
+Normally, you just need the Service’s name and DNS will automatically resolve to the full address. However, if you need to access a Service in another Namespace just use the Service name plus the Namespace name.
+
+For example, if you want to connect to the “database” service in the “test” namespace, you can use the following address:
+database.test
+If you want to connect to the “database” service in the “production” namespace, you can use the following address:
+database.production
+
+- Out of the box, your active namespace is the “default” namespace. Unless you specify a Namespace in the YAML, all Kubernetes commands will use the active Namespace.
+Unfortunately, trying to manage your active Namespace with kubectl can be a pain. Fortunately, there is a really good tool called kubens (created by the wonderful Ahmet Alp Balkan) that makes it a breeze!
+
+When you run the ‘kubens’ command, you should see all the namespaces, with the active namespace highlighted:
+
+To switch your active namespace to the ‘test’ Namespace, run:
+
+kubens test
+Now you can see that the ‘test’ Namespace is active:
+(https://cloud.google.com/blog/products/containers-kubernetes/kubernetes-best-practices-organizing-with-namespaces)
+(https://ahmet.im/blog/kubernetes-network-policy/)
+(https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+
+- Network Policies is a new Kubernetes feature to configure how groups of pods are allowed to communicate with each other and other network endpoints. In other words, it creates firewalls between pods running on a Kubernetes cluster. 
+- NetworkPolicy is just another object in the Kubernetes API. You can create many policies for a cluster. A NetworkPolicy has two main parts:
+
+Target pods: Which pods should have their ingress (incoming) network connections enforced by the policy? These pods are selected by their label.
+Ingress rules: Which pods can connect to the target pods? These pods are also selected by their labels, or by their namespace.
+
+- A controller tracks at least one Kubernetes resource type. These objects have a spec field that represents the desired state. The controller(s) for that resource are responsible for making the current state come closer to that desired state.
+
+# Parts of kubernetes
+- etcd
+Consistent and highly-available key value store used as Kubernetes' backing store for all cluster data.
+- kube-scheduler
+Control plane component that watches for newly created Pods with no assigned node, and selects a node for them to run on.
+- A controller tracks at least one Kubernetes resource type(could be pods, services etc). These objects have a spec field that represents the desired state. The controller(s) for that resource are responsible for making the current state come closer to that desired state.
+- kube-controller-manager
+Control plane component that runs controller processes.
+Logically, each controller is a separate process, but to reduce complexity, they are all compiled into a single binary and run in a single process.
+- cloud-controller-manager
+A Kubernetes control plane component that embeds cloud-specific control logic. The cloud controller manager lets you link your cluster into your cloud provider's API, and separates out the components that interact with that cloud platform from components that only interact with your cluster.
+- kubelet
+An agent that runs on each node in the cluster. It makes sure that containers are running in a Pod.
+- kube-proxy maintains network rules on nodes. These network rules allow network communication to your Pods from network sessions inside or outside of your cluster.
+- Container runtime
+The container runtime is the software that is responsible for running containers.
+- kube-apiserver
+The API server is a component of the Kubernetes control plane that exposes the Kubernetes API. The API server is the front end for the Kubernetes control plane.
+
+# (https://kubernetes.io/docs/concepts/services-networking/ingress/)
+- Ingress may provide load balancing, SSL termination and name-based virtual hosting. An Ingress controller is responsible for fulfilling the Ingress, usually with a load balancer
+- An Ingress with no rules sends all traffic to a single default backend and .spec.defaultBackend is the backend that should handle requests in that case. The defaultBackend is conventionally a configuration option of the Ingress controller and is not specified in your Ingress resources. If no .spec.rules are specified, .spec.defaultBackend must be specified. 
+
+- A PersistentVolumeClaim (PVC) is a request for storage by a user. It is similar to a Pod. Pods consume node resources and PVCs consume PV resources. Pods can request specific levels of resources (CPU and Memory). Claims can request specific size and access modes (e.g., they can be mounted ReadWriteOnce, ReadOnlyMany or ReadWriteMany)
+- A projected volume maps several existing volume sources into the same directory.
+- A StorageClass provides a way for administrators(aws, azure, gcp etc) to describe the "classes" of storage they offer.
+- These volumes have a lifecycle independent of the pod.
+
+# Monitoring health and troubleshooting cluster (https://kubernetes.io/docs/tasks/debug/debug-cluster/monitor-node-health/)
+# Useful tools 
+ - kubectl port-forward allows using resource name, such as a pod name, to select a matching pod to port forward to.
+ - In order to access your app through node port, you have to use this url http://{node ip}:{node port}.
+
+# How Does SSL Termination Work?
+SSL termination works by intercepting the encrypted traffic before it hits your servers, then decrypting and analyzing that traffic on an Application Delivery Controller (ADC) or dedicated SSL termination device instead of the app server.
+- SSL termination refers to the process of decrypting encrypted traffic before passing it along to a web server.
+- But, decrypting all that encrypted traffic takes a lot of computational power—and the more encrypted pages your server needs to decrypt, the larger the burden.
+SSL termination (or SSL offloading) is the process of decrypting this encrypted traffic. Instead of relying upon the web server to do this computationally intensive work, you can use SSL termination to reduce the load on your servers, speed up the process, and allow the web server to focus on its core responsibility of delivering web content.
+
+# For SSL/TLS negotiation to take place, the system administrator must prepare the minimum of 2 files: Private Key and Certificate. When requesting from a Certificate Authority such as DigiCert Trust Services, an additional file must be created. This file is called Certificate Signing Request, generated from the Private Key. The process for generating the files are dependent on the software that will be using the files for encryption.
+
+# The following is a standard SSL handshake when RSA key exchange algorithm is used:
+1.  Client Hello
+Information that the server needs to communicate with the client using SSL. This includes the SSL version number, cipher settings, session-specific data.
+2.  Server Hello
+Information that the server needs to communicate with the client using SSL. This includes the SSL version number, cipher settings, session-specific data.
+3.  Authentication and Pre-Master Secret
+Client authenticates the server certificate. (e.g. Common Name / Date / Issuer) Client (depending on the cipher) creates the pre-master secret for the session, Encrypts with the server's public key and sends the encrypted pre-master secret to the server.
+4.  Decryption and Master Secret
+Server uses its private key to decrypt the pre-master secret. Both Server and Client perform steps to generate the master secret with the agreed cipher.
+5.  Encryption with Session Key
+Both client and server exchange messages to inform that future messages will be encrypted.
+
+ 
+# Why use StatefulSets
+You can use StatefulSets to deploy stateful applications and clustered applications that save data to persistent storage, such as Compute Engine persistent disks. StatefulSets are suitable for deploying Kafka, MySQL, Redis, ZooKeeper, and other applications needing unique, persistent identities and stable hostnames.
+
+StatefulSets represent a set of Pods with unique, persistent identities, and stable hostnames that GKE maintains regardless of where they are scheduled. StatefulSets use a Pod template, which contains a specification for its Pods. The state information and other resilient data for any given StatefulSet Pod is maintained in persistent volumes associated with each Pod in the StatefulSet. StatefulSet Pods can be restarted at any time.
+
+# Readiness and liveness probes
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes
+to check whether or not the pods are healthy
+
+# Assign CPU Resources to Containers and Pods (https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/)
+ - Pod scheduling is based on requests. A Pod is scheduled to run on a Node only if the Node has enough CPU resources available to satisfy the Pod CPU request.
+ - The CPU request for a Pod is the sum of the CPU requests for all the Containers in the Pod. Likewise, the CPU limit for a Pod is the sum of the CPU limits for all the Containers in the Pod.
+ - If you do not specify a CPU limit for a Container, then one of these situations applies:
+    * The Container has no upper bound on the CPU resources it can use. The Container could use all of the CPU resources available on the Node where it is running.
+    * The Container is running in a namespace that has a default CPU limit, and the Container is automatically assigned the default limit. Cluster administrators can use a LimitRange to specify a default value for the CPU limit.
+
+# Assign Memory Resources to Containers and Pods (https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/)
+
+# Configure a Pod to Use a Volume for Storage (https://kubernetes.io/docs/tasks/configure-pod-container/configure-volume-storage/)
+
+# Configure a Pod to Use a PersistentVolume for Storage (https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/)
+  - You, as cluster administrator, create a PersistentVolume backed by physical storage(ebs, azure storage etc). You do not associate the volume with any Pod.
+ - You, now taking the role of a developer / cluster user, create a PersistentVolumeClaim that is automatically bound to a suitable PersistentVolume.
+ - You create a Pod that uses the above PersistentVolumeClaim for storage
+
+# Configure a Pod to Use a Projected Volume for Storage (https://kubernetes.io/docs/tasks/configure-pod-container/configure-projected-volume-storage/)
+
+# Assign Pods to Nodes (https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/)
+
+# Configure a Pod to Use a ConfigMap (https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/)
+
+# Translate a Docker Compose File to Kubernetes Resources (https://kubernetes.io/docs/tasks/configure-pod-container/translate-compose-kubernetes/)
+
+# List All Container Images Running in a Cluster (https://kubernetes.io/docs/tasks/access-application-cluster/list-all-running-container-images/)
+
+# Access Services Running on Clusters (https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster-services/)
+ - Use a service with type NodePort or LoadBalancer to make the service reachable outside the cluster. 
+ - Place pods behind services. To access one specific pod from a set of replicas, such as for debugging, place a unique label on the pod and create a new service which selects this label.
+ - Run a pod, and then connect to a shell in it using kubectl exec. Connect to other nodes, pods, and services from that shell as they'll be in the same network.
+
+# Connect a Frontend to a Backend Using Services (https://kubernetes.io/docs/tasks/access-application-cluster/connecting-frontend-backend/)
+ - A Service creates a persistent IP address and DNS name entry so that the backend microservice can always be reached. 
+
+# Create an External Load Balancer (https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/)
+ - When creating a Service, you have the option of automatically creating a cloud load balancer. This provides an externally-accessible IP address that sends traffic to the correct port on your cluster nodes, provided your cluster runs in a supported environment and is configured with the correct cloud load balancer provider package.You can also use an Ingress in place of Service
+ 
+# Manage TLS Certificates in a Cluster (https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/)
+
+# Managing Secrets using Configuration File (https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-config-file/)
+
+# Define a command and arguments when you create a Pod (https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/)
+
+# StatefulSets (https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
+ - Like a Deployment, a StatefulSet manages Pods that are based on an identical container spec. Unlike a Deployment, a StatefulSet maintains a sticky identity for each of their Pods. These pods are created from the same spec, but are not interchangeable: each has a persistent identifier that it maintains across any rescheduling.
+ - StatefulSets are valuable for applications that require one or more of the following.
+     * Stable, unique network identifiers.	
+     * Stable, persistent storage.
+     * Ordered, graceful deployment and scaling.
+     * Ordered, automated rolling updates.
+
+# Headless Services (https://kubernetes.io/docs/concepts/services-networking/service/#headless-services)
+ Its a service to service mechanism without using clusterIp
+ - Sometimes you don't need load-balancing and a single Service IP. In this case, you can create what are termed "headless" Services, by explicitly specifying "None" for the cluster IP (.spec.clusterIP).
+ You can use a headless Service to interface with other service discovery mechanisms, without being tied to Kubernetes' implementation.
+ For headless Services, a cluster IP is not allocated, kube-proxy does not handle these Services, and there is no load balancing or proxying done by the platform for them. How DNS is automatically configured depends on whether the Service has selectors defined
+
+# Type values and their behaviors are:
+ * ClusterIP: Exposes the Service on a cluster-internal IP. Choosing this value makes the Service only reachable from within the cluster. This is the default that is used if you don't explicitly specify a type for a Service.
+ * NodePort: Exposes the Service on each Node's IP at a static port (the NodePort). To make the node port available, Kubernetes sets up a cluster IP address, the same as if you had requested a Service of type: ClusterIP.
+ * LoadBalancer: Exposes the Service externally using a cloud provider's load balancer.
+ * ExternalName: Maps the Service to the contents of the externalName field (e.g. foo.bar.example.com), by returning a CNAME record with its value. No proxying of any kind is set up.
+
+# Edge router: A router that enforces the firewall policy for your cluster. This could be a gateway managed by a cloud provider or a physical piece of hardware.
+
+# Configuring Redis using a ConfigMap (https://kubernetes.io/docs/tutorials/configuration/configure-redis-using-configmap/)
+
+# Follow articles on https://www.eksworkshop.com/ (https://www.youtube.com/watchv=emjxGvGhWm0&list=PLehXSATXjcQF3NZgGeaNOgo2MRzi0arKY&index=8)
+  * app mesh with eks (https://www.eksworkshop.com/advanced/330_servicemesh_using_appmesh/)
+  * helm chart with eks
+  * autoscaling pods and cluster in eks using HPA(horizontal pods autoscaler) and CA(cluster autoscaler not for fargate launch type as it does it automatically), load test using siege
+  * deploying on eks 
+  * ci/cd with eks and codebuild
+  * having backend pods/service in private and frontend in public subnets
+  * using ERSA to attach IAM roles to specific pods rather than to the whole EC2 intance for intance if there are 2 different pods are running on an EC2 instance and we attach an IAM role to the EC2 instance in the cluster that talks to the SNS or SQS or some other service in AWS then both of them will have access whilst we only want one kind of pod to have access, to have better security we can limit access to only one kind of service or pods rather than the whole EC2 instance 
