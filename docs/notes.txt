@@ -528,3 +528,57 @@ debounceTimer(), debounceUntilWhen() - when we wanna make an api call or fetch d
 
 # Apache Kafka - sample project architecture
 https://aws.amazon.com/blogs/developer/building-an-apache-kafka-data-processing-java-application-using-the-aws-cdk/ 
+
+# Advanced CSS 
+https://www.youtube.com/watch?v=TUD1AWZVgQ8
+ - custom-media
+ - container
+ - clamp 
+
+ # react best practices 
+ https://www.youtube.com/watch?v=GGo3MVBFr1A
+ - AbortController with fetch for cancelling multiple asynchronous requests
+
+ # rem vs em
+ https://www.youtube.com/watch?v=H4UtKu11yXg
+ - rem is relative(dependent font size) to the root(html) element
+ for ex - html {font-size: 10px}, p{ font-size: 2rem} the p tag will have 20px
+ - em is relative to the parent element
+
+ # react do's and don'ts 
+ https://www.youtube.com/watch?v=4FhJkX18fS8
+ - use purefunctional components to avoid unnecessary re-rendering, only do it when the props are changed
+ - UseCallback 
+
+ # react mistakes
+ https://www.youtube.com/watch?v=E1cklb4aeXA
+
+# react bug fix 
+https://www.youtube.com/watch?v=XUwzASyHr4Q
+
+# CSRF tokens
+https://www.youtube.com/watch?v=80S8h5hEwTY
+
+# CSS :has,:is selectors Advanced usgaes
+https://www.youtube.com/watch?v=K6CWjkDgQnE
+
+# react swr !important
+https://www.youtube.com/watch?v=6gb6oyO1Tyg
+https://swr.vercel.app
+- it used to preload data and better than useEffect, as it caches data and only makes new request whenever there's a change in 
+  data like add, delete or update, but not make unnecessary requests like useEffect as it does even for a small state change
+- it use optimistic UI to match the new data and expecting data to make new request or not
+
+# mongodb refresh 
+https://www.youtube.com/watch?v=ofme2o29ngU
+
+# angular ngrx !important
+https://www.youtube.com/watch?v=kx0VTgTtSBg
+
+# Eventbridge vs SQS
+ - if we have more than one consumer than wwe should try to use AWS Eventbridge as comapred to SQS
+  because once the message is successfully processed in SQS it won't be available for other consumers but we can avoid this using
+  SNS and creating a topic anc subscribing to that topic and using multiple Queues and lambdas(depending on use case) for each consumer
+  but that'll be hard to manage and more cost, whereas with Eventbridge we have to push an event into one single event bus and then
+  apply rules according to which it can send same event to more than one consumers, and also filter events based on rules, hence we 
+  have to only manage only one single event-bus as compared to N number of Queues and the unprocessed messages will go into DLQ

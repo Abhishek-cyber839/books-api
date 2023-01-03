@@ -1506,3 +1506,41 @@ Output: [2,1,4,3,5]
     return maxSoFar;
  }
 
+# book allocation problem (https://www.youtube.com/watch?v=YTTdLgyqOLY)
+int minOfMaxAllocations(int students, vector<int> pages){
+   int start = 0, end = sum(pages.begin(),pages.end()), middleElementIndex, minAlocations = INT_MAX;
+    while(start < end){
+      int midElement = (start+end)/2;
+      if(IsPossibleSolution(midElement, students, pages)){
+        minAlocations = min(minAlocations, midElement)
+        end = midElement-1;
+      } else{
+        start = midElement+1
+      }
+    }
+    return minAlocations;
+}
+
+bool IsPossibleSolution(int midElement, int students, vector<int> pages){
+  int index = 0, sum = 0, n = pages.size(), partitionsSoFar = 1 // as we allocate atleast 1 book in the beginning;
+  while(index < n){
+    if((sum += pages[midElement]) < midElement){
+      sum += pages[midElement]
+      index++;
+    } else if(partitionsSoFar > students){
+      return false
+    } else{
+      partitionsSoFar++;
+      index++:
+    }
+  }
+  return true;
+}
+
+# median of two sorted arrays
+
+# V.V.Important tips for coding interview
+- https://hackernoon.com/14-patterns-to-ace-any-coding-interview-question-c5bb3357f6ed
+- https://leetcode.com/discuss/study-guide/2004928/Amazon-LP-Questions
+- https://leetcode.com/discuss/interview-question/2069641/The-Only-Lists-You-Need-For-Your-Interview-Preparation
+- https://leetcode.com/discuss/study-guide/2272161/Most-Important-topics-for-Interviews-or-CS-Core-topics

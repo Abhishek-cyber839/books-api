@@ -171,3 +171,18 @@ to check whether or not the pods are healthy
   * ci/cd with eks and codebuild
   * having backend pods/service in private and frontend in public subnets
   * using ERSA to attach IAM roles to specific pods rather than to the whole EC2 intance for intance if there are 2 different pods are running on an EC2 instance and we attach an IAM role to the EC2 instance in the cluster that talks to the SNS or SQS or some other service in AWS then both of them will have access whilst we only want one kind of pod to have access, to have better security we can limit access to only one kind of service or pods rather than the whole EC2 instance 
+
+  # Use AWS session manager rather than ssh(firstly ssh into public ec2 then ssh into private ec2) to debug pods running on nodes in private or public subnets
+  # we can use gitops to autmate process of ci/cd where we'll push new changes, build new image push it to ecr repository like 
+  usual github actions or other workflow like gitlab then FLUX will detect changes in image and auto-deploy newer changes to the
+  cluster
+  # https://github.com/aws/aws-eks-best-practices/ has lots of details
+  # Use IAM roles and assign them to kubernetes service account, namespace, pods to restrict access to aws services from pods rather
+  then from the whole node or subnet(NACL)
+  # For service discovery either use CloudMap or aws app mesh(service mesh)
+
+  # HPA practical (https://www.youtube.com/watch?v=3BnrXapY7zo)
+  # when do not create a service account a default one is created (kubectl get sa -A)
+  # Kubernetes Security (https://www.youtube.com/watch?v=QyG0WSCszYg) Role, ClusterRole, RBAC, RoleBinding, IRSA, Service Account
+  # Ingress controllers are proxies either nginx, gcp load balancer, taefik etc, we creater them as a deployment,
+  later we create ingress resource which is a YAML file conrtaining rules for path based routing, hosting
