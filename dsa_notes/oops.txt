@@ -1,0 +1,29 @@
+Encapsulation -> hiding unnecessary data by making them private
+Abstraction -> hiding implementation details of method i.e implement the methods in super class and base class can then use them without even 
+worrying them how they are implemented for ex quick_Sort in C++ accepts generic data, we don't have to stress how it is implemented
+we can simply pass data of int, strings etc. In C# abstract classes also has some abstract(not implemented) methods along with
+some methods implemented
+
+Polymorphism -> 2 types
+compile time -> 
+1.funtion overloading - void solve(), void solve(int x) i.e same function name but different signature, void solve(),int solve() is
+invalid
+2.operator overloading 
+runtime -> 
+1. method overriding - 
+class super{
+   void method() {}
+}
+class base: super(){
+    override void method() {}
+}
+
+inheritance ->
+1.multiple - base can extend multiple super classes(only in C++), in other languages such as Java can only extend one super class
+2.multi-level - class 1 will extend super class, then class 2 will extend class 1 and so on 
+3.single - only one class extends one single class
+4.hierarchy - same as multilevel
+5.hybrid - combination of 1 & 2
+
+// return function in UseEffect Hook
+https://stackoverflow.com/questions/56800694/what-is-the-expected-return-of-useeffect-used-for
