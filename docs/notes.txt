@@ -582,3 +582,231 @@ https://www.youtube.com/watch?v=kx0VTgTtSBg
   but that'll be hard to manage and more cost, whereas with Eventbridge we have to push an event into one single event bus and then
   apply rules according to which it can send same event to more than one consumers, and also filter events based on rules, hence we 
   have to only manage only one single event-bus as compared to N number of Queues and the unprocessed messages will go into DLQ
+
+# Deplying microservices to different environments in ECS or EKS
+ - If we ever wanna deploy same docker images to 3 different environments dev,qa and prod for testing then we could use 3 different
+   aws accounts each with one cluster and ecr registery, and then push that image to it,but if we wanna avoid averhead then we
+   could create 3 different clusters each with its own load balancer and use one ecr registery and then first deply to lets say 
+   dev-cluster then test it and later to qa-cluster, similarly to prod-cluster, we can invoke microservices in those different clusters
+   using their corresponding load balancers, same can be done with EKS
+
+# Step functions workflow in backend with Eventbridge
+  - The frontend app will push events to Eventbridge event bus, later based on the rules we can call specific step-functions workflow
+    ,where it'll use api gateway, vpc link to call the microservices hosted in ECS or EKS, and perform other tasks as seperate branches
+
+# AWS systems manager -
+ It's a service used to monitor on prem servers and ec2 intances along with other aws services such as s3 bucket, dynamodb, rds intances
+ It monitors those services/intances for regular updates or faults and installs them on scheduled bases, for ex - it will monitor all the
+ servers in patch group and install the newer versions of those softwares after scanning velnerabilities on its own, or lets say if an rds
+ instance goes down it will restart that, or lets say someone makes a s3 bucket access public from prviate then it will change that back to 
+ private, few terms to remember
+ patch baseline - list of softwares/services we wanna monitor/scan regularly
+ patch group - collection of servers grouped by environment for ex - dev,qa, prod
+ compliance report - after installing the required updates it will generate a compliance report and push that to s3 bucket, that compliance
+ report will tell us which services or servers have what we want them to have and which of them don't, for ex - i don't want my s3 buckets
+ to be public, but someone within a company changes that to public without notifying anyone and lets say that s3 bucket is monitored by
+ systems manager, then it will revert that back to private
+ run command - this command is responsible for restarting the servers, installing new updates
+ If we wanna mointor on prem servers then we have to install ssm argent on them
+ resources - 
+ https://aws.amazon.com/blogs/aws/category/management-tools/amazon-ec2-systems-manager/
+ https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-instances-and-nodes.html
+ https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-automation.html
+ https://github.com/awslabs/aws-systems-manager/tree/master/Documents/Automation - !important
+
+ # Cloudwatch 
+  - we can add events that will run on specific time for ex - AWS systems manager to install new updates weekly on a specific day
+  - we can set an alarm for biiling i.e - if our bill exceeds more than the set amount it will trigger a almbda or send an email
+
+# Cloudtrail
+  - it not only collects logs like cloud watch but also records api endpoints for different services for ex -  a new user added
+     to the group, permissions removed from the user, we changed configurations of ec2 instance etc. 
+
+# AWS Kinesis -
+ - it is of two 3 types stream, firehose and analytics
+ - in stream type we can push events/data to Kinesis firehose and then consumers can consume that data and later they can store that data
+   where ever they want as persistence storage
+ - in firehose type we cannot consume that data as a consumer application but rather the data is directly stored into persistence
+   storage, currently there are 4 of them s3 buckets, opeansearch (elastic search), redshift, we can only have one lambda function 
+   which will get executed on new data, this can remove unwanted properties or add new properties in the data, and later that date
+   is pushed to s3 bucket and is partioned on year/month/day folder for ex - backend app will send ip address of the client to kinesis firehose
+   {
+     "Ip" : "asd.sdf.asd.awq"
+   }
+   later using lambda transformer we can call an external api and get details like location or other metadata
+   {
+    "Ip" : "asd.sdf.asd.awq",
+    "city" : "adasdfasd"
+    "ppostcode" : "asdasd"
+    "timestamp" : "adsas" 
+   }
+ - in case we also wanna have the orginal data we can also store that in seperate s3 bucket for later use
+ - we can have transformations that will get executed once the data is pushed to kinesis firehose, which will convert data to parquet files using aws glue
+ - data is pushed or lambda transformer is executed(if we plan to use one) based on batch interval or batch capacity which ever comes 
+   first
+ - with streams the consumers will consume data through sharding(a database scheme where data is partioned over several serveres based on column
+   to reduce latency), it is of two types standard and extended, only use extended if we have more than 3 consumer applications 
+ - in the end we can query data stored in s3 files using aws athena  
+
+   - https://www.youtube.com/watch?v=UE34CWAhT3o
+
+ # CQRS patter using lambda and AWS RDS - 
+  we can also implement CQRS pattern using lambda by having seperate labdas for commands and one lambda for queries, and giving only
+  read only access to the query lambda and read and write access to other three command lambdas, we can also do similar things if we are 
+  using an api rather than lambdas, then just create two DbContext classes one for commands and one for query only, later in programs.cs
+  inject the url of readonly database instance for query DbContext, and read & write access database instance url to commands DbContext
+   for ex - 
+    var connectionString = builder.Configuration.GetConnectionString("ReadOnlyInstanceconnectionstring");
+    builder.Services.AddDbContext<QueryDbContext>(x => x.UseSqlServer(connectionString));
+
+    var connectionString = builder.Configuration.GetConnectionString("ReadWriteInstanceconnectionstring");
+    builder.Services.AddDbContext<CommandDbContext>(x => x.UseSqlServer(connectionString));
+  This way we can have seperation of logic and we won't be able to perform unwanted operations on endpoints where we're not supposed to
+ 
+ # AWS App Config - 
+  - It is used to deploy configurations on different environments, configuration is any data related to our app that we wanna read during 
+    runtime, for ex - 
+    {
+       customer_id : [1,2,3,4]
+       showPreview : true
+       isEnabled : false
+       .....
+    }
+    which we can later use in our app/microservices at later point
+  - it is similar to aws parameter store except that it can also perform systax validation using json schema validator or lambda
+     function to avoid errors when reading configuration in service/application
+  - configuration profile is a file containing configuration data that we wanna use, it could be in text, yaml ,json format
+  - we can attach it to cloud watch alarm , and it will rollback the newer changes whenever that alarm will trigger, for ex - 
+    someone has made changes to the config file and have deployed that on prod env, then while reading that configuration file an
+    error has happened and cloudwatch it monitoring that error and we have set an error lets say a 500 error, once that error will be thrown
+    it will trigger the cloud watch alaram and that alarm will make the app config to rollback to previous revision
+  - it is a pull based mechanism, i.e whenever newer changes are deployed the app using that configuration profile(configuration file/data)
+     will not get notified on its own, but rather we have to make an api call periodically to get newer configurations
+  - if we are using app config with lambda  then we can utilize lambda layers extension, which will make api calls on its own for 
+    newer configuration (see - how to use app config with lambda)
+  - configuration profiles are of tow type - feature flag and freeform, in freeform we can validate the file using validators discussed
+    above whilst in feature flag we can't and it is for short term configuration data
+  - deployment strategy is how we wanna delpoy newer configuration changes, its not a good practice to use ALL_AT_ONCE type as it will
+    deploy all the changes at once, either deploy changes at an exponential rate or set custom percentage
+  - with ecs we can use appconfig as a sidecar(another container instance attached to main container) which will call the app config
+    api and will give the newer configurations to our microservice container for use
+
+    # AWS dynamodb -
+    - it is a managed(backups available by default, cloudwatch monitoring) nosql database, we can scale(replicated on its own) it globally whenever required
+    - items are stored in json format upto max of 400kb per item
+    - it offers a flexibility of caching using DAX(dynamodb accelator) for frequently retrieved data
+    - it offers lowere latency as compared to other aws offer nosql solutions
+    
+    # AWS document db - 
+    -  it is a managed(backups available by default, cloudwatch monitoring) nosql database, it can have max of 15 read replicas globally
+    - there's no limit on size of max item size
+    - it useful if we wanna store complex/nested json objects for ex - 
+      {
+         prop1 : value
+         prop2 : {
+          prop1 : value
+          prop2 : {
+              prop1 : value
+              prop2 : {
+                
+              }
+           } 
+         }
+      }
+      - we can use mongodb sdk to query and store data
+      - we can also validate data using json validator (please see - how to validate json data mongodb)
+      - https://www.youtube.com/watch?v=fYlZ8_2MPxE (!important video skip till 8 minutes)
+      - in normal database replication we copy all 5 layers, (api, query, caching, logging, storage), but with documentdb we're only
+        replicating storage layer(logging & storage) during replication process in different AZ's, for computaion layer((api, query, caching) 
+        it'll be one instance and later we can scale that one instance or add more instances and make them read replicas
+      - it backups data into s3 buckets, data gets partioned into 10gb chunks
+      - migration for on prem or on cloud database to documentdb using AWS DMS (database migration system), 
+        choose "migrate current and ongoing changes" options to also copy the new data as well (https://www.youtube.com/watch?v=Png6NIV73qc) 
+
+        # Why to use containers vs VMS ?
+          - https://www.youtube.com/watch?v=eyNBf1sqdBQ
+          - If we don't use containers then inorder to run multiple instances for same microservice w have to use multiple servers, for ex - 
+            a node app listening on port 3000 can only run one instance on one server, if we try to run another one it'll throw port already
+            bounded exception, to avoid this we can install virtual machines in one server, and deploy that node application on those VM's, but since
+            vm's are an operating system in their own it'll require time to boot applications and it will require huge space installing several
+            vm's
+          - we can avoid the above issues using containers, as containers are not an operating system, they use the underlying operating
+            system of the instance on which they are running, and since they only contain the image layers not the oprating system files(like VM's)
+            it takes less time to restart if a container crashes to restart, and we can run as many instances of similar microservice with less
+            space and memory, they are managed by docker engine, which is responsible for allocating hardware resources to those containers, like hypervisor
+            is responsible for allocating reources to VM's
+          - one disadvantage of using containers is that since they are running on host operating system, if an oprating system creashes they'll also 
+            get destroyed
+          - another disadvantage is that we cannot run linux based docker images on windows(unless we're using windows subsystem for linux),
+            and windows images on linux, since both have different kernels, and for docker kernels is what is uses to run those containers
+    
+    # AWS CloudFront - 
+     - It is a  CDN, where request from client first goes to nearest edge location(where caches are kept), if it doesn't finds any resources
+     with that edge location then it passes request to the nearest regional edge location(where caches are kept for longer period of time)
+     , if regional edge location doesn't have those resources then the request goes to the actual origin/server, then response it cached
+     at both regional edge location & the nearest edge location to the client
+     - The reason why we store ressources at regional edge location is so that if the nearest edge location to the client deletes
+     it cache we can still retrieve cache resources from regional edge location rather than putting load on the actual server
+     - We can use edge lambda functions to intercept requests & responses from CloudFront to client
+     - We can use AWS WAF(web access firewall) to blacklist the ip addresses/regions from which we don't wanna recieve requests
+     - we use third party geo location services to serve content only in specific parts of the world rather then entire world, countries
+     or cities or postcodes that will be in whitelist will see the content remaining will see the custom error page
+     - it uses AWS Shield(it protects from DDOS attacks)
+     - we can manually update the old cached content with the new one
+
+
+     # Important concepts - 
+      - cluster role binding
+      - cluster role
+      - service account
+      - if we're using path based routing in eks then we've to deploy ingress as an ALB(Frontent) or NLB(backend) and add routing rules to it,
+         later CloudFront will send rquests to the ALB if it doesn't have content
+      - if we're using path based routing in apps deployed on EC2 instances then we just have to go to load balancer edit it's rules and 
+        add path based routing under listeners > protocols(http or https) > add path for which we want path based routing > select target group
+      - as our services will get recreated when they are destroyed and thus ingress load balancer will get a new ip every time so 
+       follow this to get the static ip address (https://stackoverflow.com/questions/60095864/how-can-i-assign-a-static-ip-to-my-eks-service)
+       or we can put NLB infront of ALB as only NLB have static ip address by default
+
+    # AWS Route 53 - 
+     - Firstly we've to register a domain, id we don't have a domain we can buy one (click on create new)
+     - after that a hosted zone(place where we'll have records) will be creatd automatically for this domain
+     - later create a new record type 
+        A - maps domain name to an ipv4 address
+        AAA - maps domain name to an ipv6 address
+        CNAME - maps another domain name to your domain
+        Alias - maps your domain name to an AWS service's url for ex - NLB,ALB or an app depllyed on elastic beanstalk
+
+    # AWS App Mesh -
+    - it has 4 main concepts i.e virtual gateway, virtual router, virtual service, virtual node
+    - virtual gateway - client sends requests to load balancer and it then forwards to virtual gateway, which uses envoy proxies(not as a sidecar)
+      to forward traffic to virtual service, we can add ingress rules to filter out traffic at virtual gateway
+    - virtual service - it sits in between virtual router and virtual gateway, it forwards traffic to virtual node, inside code we should
+      be using whatever name of the virtual service we've given to communicate
+    - virtual node - this what forwards traffic to real pod, we configure it through cloud map or dns resolution,
+       for ex - when using dns it will resolve the host name to the ip address, lets say a backend service is talking to a rds database service
+       and we're accessing that as rds-service inside code then when we'll use it will use it's host name(xx.aws.rds) and forward request to the database cluster
+       , but if we choose to use cloud map then first we've to create a namespace and then inside that namespace we've to create a 
+       service, and later add ip address's of ec2 instances on which pods will be running, if we're using fargate launch type then 
+       an entry is already created inside the cloud map as aws manages the creation and destortion of ec2 instances in fargate launch tyoe
+       so we can not get ip's of ec2 instances, but if choose managed cluster then we've to manually add ip addresses of the ec2 instances
+    - virtual router - it sits between virtual service and virtual node, and routes traffic to appropriate version of that service,
+      for ex - let say we've deployed a newer version of our app and we want 20% traffic to go to newer version and 80% to older version, to test the 
+      newer changes then we can use weighted routing inside virtual router, otherwise it'll direct all traffic to single service,
+      we don't have to use virtual router if we're only sending traffic to one version of the app
+    - every container inside the pods contains envoy as a sidecar proxy for communication(i.e request and response flows the following way 
+      (client <-> [x-ray <-> envoy <-> container]), and x-ray container for logging/tracing to aws xray
+    - inside backend option of virtual node we've to add the name of the virtual service that we wanna communicate within the cluster
+    - we can also use tls communication within services using aws certificate manager
+    - If we ever wanna do canary deployment using app mesh follow these steps 
+      1. do code changes, push them to github, build new image using github actions, then tag that image using v2, push
+         that image to ECR
+      2. create a brand new task definition and service and supply that new task definition
+      3. if we're using managed node groups then go and add new entry in cloud map
+      4. create new virtual node and virtual router, and then inside virtual router use weighted routing
+
+  # Steps to use new image in ECS or EKS - 
+   1. do code changes, push them to github, build new image using github actions, then tag that image using v2, push
+         that image to ECR
+   2. create a brand new task definition and service and supply that new task definition
+
+    
